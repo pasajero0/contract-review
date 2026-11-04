@@ -185,7 +185,7 @@ describe('ReviewPanel', () => {
     expect(stub.count(POST_PATH, 'POST')).toBe(0);
   });
 
-  it('request-review AC-25: shows the running review from serverTime, shows no finding content, and polls', async () => {
+  it('request-review AC-25: shows the running review from serverTime, shows none of its findings, and polls', async () => {
     vi.useFakeTimers(FAKE);
     // serverTime is far from the browser clock, so elapsed time taken from the browser would differ.
     const serverTime = Date.UTC(2001, 8, 9, 1, 46, 40);
@@ -205,7 +205,7 @@ describe('ReviewPanel', () => {
           deadlineAt: serverTime + 40_000,
           findingsCount: 3,
         }),
-        latestCompleted: completedReview({ findings: [secret] }),
+        latestCompleted: null,
         canRequest: { ...BUSY, startedAt: serverTime - 20_000 },
       }),
       // An extra field the contract does not know: it must not reach the screen.

@@ -8,6 +8,7 @@ import type {
   DocumentResponse,
   DocumentsResponse,
   FailedReview,
+  Finding,
   RunningReview,
 } from '@lex-poc/contract/documents';
 import type { Lawyer, LawyersResponse } from '@lex-poc/contract/lawyers';
@@ -161,6 +162,17 @@ export function failedReview(overrides: Partial<FailedReview> = {}): FailedRevie
     requestedAt: SERVER_TIME - 3_600_000,
     failureReason: 'ai_error',
     findingsCount: 3,
+    ...overrides,
+  };
+}
+
+export function finding(overrides: Partial<Finding> = {}): Finding {
+  return {
+    clause: '4.2',
+    title: 'Unlimited liability clause',
+    severity: 'high',
+    excerpt: 'The Supplier is liable without limit.',
+    explanation: 'Liability should be capped.',
     ...overrides,
   };
 }

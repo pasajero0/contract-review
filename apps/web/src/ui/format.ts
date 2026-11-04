@@ -17,6 +17,11 @@ export function secondsBetween(fromMs: number, toMs: number): number {
   return Math.max(0, Math.floor((toMs - fromMs) / 1000));
 }
 
+/** "24 Sep" in the given time zone. */
+export function formatShortDayMonth(epochMs: number, timeZone: string): string {
+  return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone }).format(epochMs);
+}
+
 /** "1 December" in the given time zone. */
 export function formatDayMonth(epochMs: number, timeZone: string): string {
   return new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', timeZone }).format(epochMs);

@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { DocumentResponse, getDocument } from '@lex-poc/contract/documents';
@@ -10,8 +11,9 @@ import { getCurrentLawyerId, subscribeToLawyerId } from '@/api/lawyer';
 import { queryKeys } from '@/api/queryKeys';
 import { Alert } from '@/ui/alert';
 import { Button } from '@/ui/button';
-import { EarlierReview } from './EarlierReview';
+import { formatShortDayMonth } from '@/ui/format';
 import { RequestControls } from './RequestControls';
+import { ReviewResult } from './ReviewResult';
 import { failureText, progressLine, reasonFromError, type Disallowed } from './reviewText';
 
 const POLL_MS = 1500;
@@ -107,7 +109,7 @@ export function ReviewPanel({ documentId }: { documentId: string }) {
   const rejected = rejection && rejection.atServerTime === doc.serverTime && doc.canRequest.allowed;
   const canRequest = rejected ? rejection.reason : doc.canRequest;
   const failed = doc.current === null ? doc.lastFailed : null;
-  const earlierLabel = doc.current || failed ? 'Previous review' : 'Latest review';
+  const resultLabel = doc.current || failed ? 'Previous review' : 'Review result';
 
   return (
     <div className="space-y-4">
@@ -135,8 +137,21 @@ export function ReviewPanel({ documentId }: { documentId: string }) {
       {doc.current && doc.latestCompleted && (
         <Alert role="status">A new review is running. The result below is from an earlier review.</Alert>
       )}
+      {doc.supersededBy && (
+        <Alert role="status">
+          {`This version was replaced by the version of ${formatShortDayMonth(doc.supersededBy.uploadedAt, quota.timeZone)}. `}
+          <Link href={`/documents/${encodeURIComponent(doc.supersededBy.documentId)}`} className="underline">
+            Open the newest version
+          </Link>
+        </Alert>
+      )}
       {doc.latestCompleted && (
-        <EarlierReview review={doc.latestCompleted} label={earlierLabel} timeZone={quota.timeZone} />
+        <ReviewResult
+          review={doc.latestCompleted}
+          label={resultLabel}
+          timeZone={quota.timeZone}
+          outdated={doc.supersededBy !== null}
+        />
       )}
     </div>
   );
