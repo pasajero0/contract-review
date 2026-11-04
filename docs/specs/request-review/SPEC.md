@@ -143,7 +143,7 @@ Decisions the source documents did not settle. Each is built as written, and can
 pnpm test
 ```
 
-Tests carry AC ids: `.claude/bin/trace <feature>` lists what is not covered. Restart (AC-20) by hand: start a review, stop the API, start it again, and after 60 s the review is `failed` / `timeout`. Screen tests need a dependency that is not allowed yet, such as Testing Library; until it is approved, check the frontend by hand in a browser.
+Tests carry AC ids: `.claude/bin/trace <feature>` lists what is not covered. Restart (AC-20) by hand: start a review, stop the API, start it again, and after 60 s the review is `failed` / `timeout`. Screen tests run under Vitest with Testing Library and `jsdom` (ADR-0017), which is not a real browser, so check the frontend by hand too.
 
 ## Changes
 

@@ -1,9 +1,5 @@
-import { RequestReviewButton } from '@/features/review/RequestReviewButton';
+import { DocumentList } from '@/features/documents/DocumentList';
 
 export default function HomePage() {
-  return (
-    <main>
-      <RequestReviewButton />
-    </main>
-  );
+  return <DocumentList />;
 }

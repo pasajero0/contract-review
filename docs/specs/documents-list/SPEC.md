@@ -8,7 +8,7 @@ stage: documents-list
 
 A lawyer picks who they are and sees every document in the workspace, with the state of its latest review and the plan's usage. The API computes all of it; the screen only shows it.
 
-**Built:** the backend. The screen is not built.
+**Built:** the backend and the screen.
 
 ## Decisions
 
@@ -85,6 +85,10 @@ Decisions the source documents did not settle. Each is built as written, and can
 - **The label** on a replaced version is "Read-only". The human said "something like read-only, or nothing" (ADR-0015).
 - **Latest review** means the most recently requested one, whatever its outcome.
 - **A response that fails validation** looks the same as an API that does not answer (ADR-0016).
+- **Times in the list** use the browser's time zone, because the list's response has none. The plan's reset date uses the workspace's.
+- **Texts the source documents do not give:** "Review timed out", "Review failed: AI error", "N findings, M high".
+- **If one refresh fails while polling,** the list is replaced by the error and "Retry".
+- **No automatic retries:** a failed call shows the error at once.
 
 ## Out of scope
 
@@ -97,10 +101,11 @@ Decisions the source documents did not settle. Each is built as written, and can
 pnpm test
 ```
 
-Tests carry AC ids: `.claude/bin/trace <feature>` lists what is not covered. Screen tests need a dependency that is not allowed yet, such as Testing Library; until it is approved, check the frontend by hand in a browser.
+Tests carry AC ids: `.claude/bin/trace <feature>` lists what is not covered. Screen tests run under Vitest with Testing Library and `jsdom` (ADR-0017), which is not a real browser, so check the frontend by hand too.
 
 ## Changes
 
+- 2026-11-04 — No criterion changed: the screen is built.
 - 2026-11-04 — Added "To check in manual testing": decisions the source documents did not settle.
 - 2026-11-04 — AC-8: applies only where a request records who acted, because reads carry no identity and `GET /lawyers` comes before a lawyer is chosen. AC-6: defines used, running and remaining. AC-7: states the order.
 - 2026-11-04 — AC-19: "replaced" becomes "Read-only" — ADR 0015.
