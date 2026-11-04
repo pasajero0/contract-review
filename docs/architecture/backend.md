@@ -15,7 +15,7 @@ Only the review service changes the database. Everything else passes events to i
 | Part | Does |
 |---|---|
 | Routes | HTTP, current lawyer (header), validation, service result to HTTP code. No logic |
-| Review service | All rules: request, record finding, complete, fail, expire, views for the web app |
+| Review service | All rules and writes: request, record finding, complete, fail, expire. Its read side is in `services/reviewQueries.ts`, with one plan count and one definition of the latest review. `createReviewService` stays the single entry point |
 | Runner | Runs the AI engine in the background and forwards each event to the service. Decides nothing |
 | Fake AI | Returns findings from the JSON with delays; fails and stalls using `random` and `clock` |
 | Sweeper | Every `sweepIntervalMs`: "expire overdue reviews" |

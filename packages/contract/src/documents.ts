@@ -86,3 +86,56 @@ export const getDocument = {
   path: '/documents/:id',
   responses: { 200: DocumentResponse, 404: ErrorBody },
 } as const;
+
+const ReviewSummary = z.object({
+  reviewId: z.string(),
+  requestedBy: z.string(), // the lawyer's name
+  requestedAt: z.number().int(),
+  findingsCount: z.number().int().nonnegative(),
+  highCount: z.number().int().nonnegative(),
+});
+
+export const DocumentState = z.discriminatedUnion('kind', [
+  z.object({ kind: z.literal('not_reviewed') }),
+  z.object({
+    kind: z.literal('in_progress'),
+    reviewId: z.string(),
+    requestedBy: z.string(),
+    requestedAt: z.number().int(),
+    deadlineAt: z.number().int(),
+    findingsCount: z.number().int().nonnegative(),
+  }),
+  z.object({ kind: z.literal('completed'), ...ReviewSummary.shape }),
+  z.object({
+    kind: z.literal('failed'),
+    reviewId: z.string(),
+    requestedBy: z.string(),
+    requestedAt: z.number().int(),
+    failureReason: z.enum(['ai_error', 'timeout']),
+    findingsCount: z.number().int().nonnegative(),
+    latestCompleted: ReviewSummary.nullable(),
+  }),
+]);
+export type DocumentState = z.infer<typeof DocumentState>;
+
+export const DocumentListItem = z.object({
+  documentId: z.string(),
+  title: z.string(),
+  type: z.string(),
+  pages: z.number().int(),
+  supersededBy: z.object({ documentId: z.string(), uploadedAt: z.number().int() }).nullable(),
+  state: DocumentState,
+});
+export type DocumentListItem = z.infer<typeof DocumentListItem>;
+
+export const DocumentsResponse = z.object({
+  documents: z.array(DocumentListItem),
+  serverTime: z.number().int(),
+});
+export type DocumentsResponse = z.infer<typeof DocumentsResponse>;
+
+export const getDocuments = {
+  method: 'GET',
+  path: '/documents',
+  responses: { 200: DocumentsResponse },
+} as const;

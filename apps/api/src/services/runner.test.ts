@@ -231,6 +231,9 @@ describe('runner when the engine or the service breaks', () => {
       expireOverdue: () => 0,
       getReview: () => null,
       getDocument: () => null,
+      listLawyers: () => [],
+      getQuota: () => ({ limit: 10, used: 0, running: 0, remaining: 10, month: '', resetsAt: 0, timeZone: '' }),
+      listDocuments: () => ({ documents: [], serverTime: 0 }),
     };
 
     startRunner({ engine, logger }, broken, { reviewId: 'r1', documentId: 'doc-1' });
@@ -261,6 +264,9 @@ describe('runner when the engine or the service breaks', () => {
       expireOverdue: () => 0,
       getReview: () => null,
       getDocument: () => null,
+      listLawyers: () => [],
+      getQuota: () => ({ limit: 10, used: 0, running: 0, remaining: 10, month: '', resetsAt: 0, timeZone: '' }),
+      listDocuments: () => ({ documents: [], serverTime: 0 }),
     };
 
     startRunner({ engine, logger }, partlyBroken, { reviewId: 'r1', documentId: 'doc-1' });

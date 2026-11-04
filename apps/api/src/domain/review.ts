@@ -93,3 +93,40 @@ export function effectiveOutcome(
   }
   return { status, failureReason };
 }
+
+export type ReviewSummaryView = {
+  reviewId: string;
+  requestedBy: string;
+  requestedAt: number;
+  findingsCount: number;
+  highCount: number;
+};
+
+export type DocumentStateView =
+  | { kind: 'not_reviewed' }
+  | ({ kind: 'in_progress' } & RunningReviewView)
+  | ({ kind: 'completed' } & ReviewSummaryView)
+  | ({ kind: 'failed' } & FailedReviewView & { latestCompleted: ReviewSummaryView | null });
+
+export type DocumentListItemView = {
+  documentId: string;
+  title: string;
+  type: string;
+  pages: number;
+  supersededBy: { documentId: string; uploadedAt: number } | null;
+  state: DocumentStateView;
+};
+
+export type DocumentListView = { documents: DocumentListItemView[]; serverTime: number };
+
+export type LawyerView = { id: string; name: string; title: string };
+
+export type QuotaView = {
+  limit: number;
+  used: number;
+  running: number;
+  remaining: number;
+  month: string;
+  resetsAt: number;
+  timeZone: string;
+};

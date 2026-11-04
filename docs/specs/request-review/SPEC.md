@@ -27,6 +27,8 @@ A lawyer requests an AI review of a document, knowing what it costs, and follows
 | [0012](../../adr/0012-unknown-severity-fails-review.md) | 2026-11-04 | An unknown severity fails the review |
 | [0015](../../adr/0015-superseded-version-uses-the-same-page.md) | 2026-11-04 | A superseded version has no request button |
 | [0016](../../adr/0016-web-validates-api-responses.md) | 2026-11-04 | A response is validated before the screen uses it |
+| [0019](../../adr/0019-what-the-plan-numbers-mean.md) | 2026-11-04 | A running review holds a slot, and used counts only completed |
+| [0020](../../adr/0020-unknown-document-fails-the-review.md) | 2026-11-04 | A document unknown to the engine fails the review |
 
 ## Terms
 
@@ -51,7 +53,7 @@ A lawyer requests an AI review of a document, knowing what it costs, and follows
 
 Built routes are in `packages/contract`. Rejections on `POST /documents/:id/reviews`: `409` with `review_in_progress` (who, when), `plan_exhausted` (`resetsAt`) or `document_superseded` (id of the current version); `404` with `document_not_found`. `GET /reviews/:id` gives `404` with `review_not_found`.
 
-Planned: `GET /documents/:id` → `current` (running review: who, when, deadline, findings so far, no content), `lastFailed` (reason, findings that had arrived), `canRequest` (whether, why not, how many will remain). `latestCompleted` is in [read-result](../read-result/SPEC.md).
+Document view: `DocumentResponse` in `packages/contract` (`documents`), on route `getDocument`. `latestCompleted` is in [read-result](../read-result/SPEC.md).
 
 ### Happy path
 
@@ -66,9 +68,9 @@ Planned: `GET /documents/:id` → `current` (running review: who, when, deadline
 ### Unhappy path
 
 - **AC-8:** IF a review is running on the document, THEN THE SYSTEM SHALL reject with `review_in_progress`, who started it and when (partner of AC-1; ADR-0008).
-- **AC-9:** IF the plan is used up, including 9 completed + 1 running, THEN THE SYSTEM SHALL reject with `plan_exhausted` and `resetsAt`. There is no queue (partner of AC-1; ADR-0003, ADR-0011).
+- **AC-9:** IF the plan is used up, including 9 completed + 1 running, THEN THE SYSTEM SHALL reject with `plan_exhausted` and `resetsAt`. There is no queue (partner of AC-1; ADR-0003, ADR-0011, ADR-0019).
 - **AC-10:** IF the document is superseded, THEN THE SYSTEM SHALL reject with `document_superseded` and the current version's id; IF it is unknown, `404` with `document_not_found` (partner of AC-1; ADR-0004).
-- **AC-11:** IF the AI fails, THEN THE SYSTEM SHALL mark the review `failed` / `ai_error`, leave the plan unused and free the document (partner of AC-3).
+- **AC-11:** IF the AI fails, THEN THE SYSTEM SHALL mark the review `failed` / `ai_error`, leave the plan unused and free the document, also when the engine does not know the document (partner of AC-3; ADR-0020).
 - **AC-12:** IF a finding has an unknown severity, THEN THE SYSTEM SHALL fail the review with `ai_error` (partner of AC-3; ADR-0012).
 - **AC-13:** IF a review is still running at 60 s, even with nothing sent by the AI, THEN THE SYSTEM SHALL give it as `failed` / `timeout` on read, and the sweeper SHALL persist it with `finished_at = deadline_at`, freeing the document and the slot (partner of AC-3).
 - **AC-14:** IF a finding, completion or failure arrives late, THEN THE SYSTEM SHALL drop it and log it ("completion arrived 4s after deadline, dropped"); the review never becomes completed and the plan is not used (ADR-0008).
@@ -116,6 +118,19 @@ Whether a review can be requested and how many remain come from `canRequest`; th
 - The screen polls every 1–2 s, only while a review runs.
 - Tests that depend on time use `ManualClock`, with no real waiting.
 
+## To check in manual testing
+
+Decisions the source documents did not settle. Each is built as written, and can change after the human tries it.
+
+- **The text "10 of 10 used"** on a disabled button when the plan is held by 9 completed + 1 running (AC-29, ADR-0019). It is not literally true there.
+- **Priority of reasons** when several apply: unknown document, unknown lawyer, superseded, already running, plan used up. A lawyer sees only the first.
+- **Exactly at the deadline** a review counts as overdue.
+- **A slow fake review keeps running** after its deadline until it ends, and its events are dropped and logged (ADR-0006).
+- **A failing fake review** takes the same 5–30 s as a normal one. The brief does not say.
+- **"Retry" after no answer** repeats the call. If the first request did reach the server, the second gets `review_in_progress`, and the screen shows that reason (AC-30, AC-35).
+- **"Retry" on a failed review** asks for confirmation again (AC-34), so it takes two clicks.
+- **Simultaneous requests** (AC-15, AC-16) run in sequence in the tests, because `node:sqlite` is synchronous on one connection (ADR-0005).
+
 ## Out of scope
 
 - A queue or a `queued` status (ADR-0003).
@@ -128,10 +143,11 @@ Whether a review can be requested and how many remain come from `canRequest`; th
 pnpm test
 ```
 
-Tests do not carry AC ids yet, so `.claude/bin/trace` cannot link them. Restart (AC-20) by hand: start a review, stop the API, start it again, and after 60 s the review is `failed` / `timeout`. Screen tests need a dependency that is not allowed yet, such as Testing Library; until it is approved, check the frontend by hand in a browser.
+Tests carry AC ids: `.claude/bin/trace <feature>` lists what is not covered. Restart (AC-20) by hand: start a review, stop the API, start it again, and after 60 s the review is `failed` / `timeout`. Screen tests need a dependency that is not allowed yet, such as Testing Library; until it is approved, check the frontend by hand in a browser.
 
 ## Changes
 
+- 2026-11-04 — Added "To check in manual testing": decisions the source documents did not settle.
 - 2026-11-04 — AC-10: `currentVersionId` follows the whole chain to the newest version. AC-11: a document unknown to the engine fails the review — POC conclusions 13 and 14.
 - 2026-11-04 — AC-31: the open point is settled, with no button on the same page — ADR 0015.
 - 2026-11-04 — AC-35: also covers a response that fails validation — ADR 0016.

@@ -99,7 +99,7 @@ describe('POST /documents/:id/reviews', () => {
     expect(response.json()).toEqual({ code: 'document_not_found' });
   });
 
-  it('responds 400 without the lawyer header, and creates nothing', async () => {
+  it('documents-list AC-8: responds 400 lawyer_required without the lawyer header, and creates nothing', async () => {
     const response = await post('doc-1', {});
 
     expect(response.statusCode).toBe(400);
@@ -107,7 +107,7 @@ describe('POST /documents/:id/reviews', () => {
     expect(db.prepare('SELECT count(*) AS n FROM reviews').get()).toEqual({ n: 0 });
   });
 
-  it('responds 400 for a lawyer that does not exist', async () => {
+  it('documents-list AC-8: responds 400 lawyer_not_found for a lawyer that does not exist', async () => {
     const response = await post('doc-1', { 'x-lawyer-id': 'missing' });
 
     expect(response.statusCode).toBe(400);

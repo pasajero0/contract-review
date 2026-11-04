@@ -1,22 +1,25 @@
 import { inTransaction, type Db } from '../db/connection.ts';
 import type { Config } from '../domain/config.ts';
 import { orderFindings } from '../domain/findingOrder.ts';
-import { monthWindow } from '../domain/monthWindow.ts';
 import {
   effectiveOutcome,
   isSeverity,
   type CanRequestView,
   type CompletedReviewView,
+  type DocumentListView,
   type DocumentView,
   type FailureReason,
   type FindingView,
   type IncomingFinding,
+  type LawyerView,
+  type QuotaView,
   type ReviewStatus,
   type ReviewView,
 } from '../domain/review.ts';
 import type { Clock } from '../ports/clock.ts';
 import type { Logger } from '../ports/logger.ts';
 import type { Random } from '../ports/random.ts';
+import { createReviewQueries } from './reviewQueries.ts';
 
 export type ReviewServiceDeps = {
   db: Db;
@@ -45,6 +48,9 @@ export type ReviewService = {
   expireOverdue(): number;
   getReview(reviewId: string): ReviewView | null;
   getDocument(documentId: string): DocumentView | null;
+  listLawyers(): LawyerView[];
+  getQuota(): QuotaView;
+  listDocuments(): DocumentListView;
 };
 
 type ReviewRow = {
@@ -91,17 +97,8 @@ export function createReviewService(
     return changes === 1;
   }
 
-  // The newest version at the end of the chain that starts at documentId.
-  function newestVersionId(documentId: string): string {
-    let id = documentId;
-    for (;;) {
-      const newer = db.prepare('SELECT id FROM documents WHERE supersedes_id = ?').get(id) as
-        | { id: string }
-        | undefined;
-      if (!newer) return id;
-      id = newer.id;
-    }
-  }
+  const queries = createReviewQueries(db, clock, config);
+  const { newestVersionId, supersededBy, latestReview, planUsage } = queries;
 
   // The only place that reads finding content, and only for a completed review.
   function readLatestCompleted(documentId: string): CompletedReviewView | null {
@@ -159,18 +156,12 @@ export function createReviewService(
       };
     }
 
-    const { startMs, endMs } = monthWindow(now, config.timeZone);
-    const { used } = db
-      .prepare(
-        `SELECT count(*) AS used FROM reviews
-         WHERE requested_at >= ? AND requested_at < ?
-           AND (status = 'completed' OR (status = 'running' AND deadline_at > ?))`,
-      )
-      .get(startMs, endMs, now) as { used: number };
-    if (used >= config.planLimit) {
+    const { used, running: slots, endMs } = planUsage(now);
+    const taken = used + slots;
+    if (taken >= config.planLimit) {
       return { allowed: false, reason: 'plan_exhausted', limit: config.planLimit, resetsAt: endMs };
     }
-    return { allowed: true, remaining: config.planLimit - used };
+    return { allowed: true, remaining: config.planLimit - taken };
   }
 
   function requestInTransaction(documentId: string, lawyerId: string): RequestResult {
@@ -288,14 +279,7 @@ export function createReviewService(
       if (!doc) return null;
 
       const now = clock.now();
-      const latest = db
-        .prepare(
-          `SELECT reviews.id AS id, lawyers.name AS name, status, failure_reason, requested_at, deadline_at,
-                  (SELECT count(*) FROM findings WHERE review_id = reviews.id) AS findings_count
-           FROM reviews JOIN lawyers ON lawyers.id = reviews.requested_by
-           WHERE document_id = ? ORDER BY reviews.requested_at DESC, reviews.rowid DESC LIMIT 1`,
-        )
-        .get(documentId) as (ReviewRow & { id: string; name: string }) | undefined;
+      const latest = latestReview(documentId);
 
       let current: DocumentView['current'] = null;
       let lastFailed: DocumentView['lastFailed'] = null;
@@ -320,14 +304,6 @@ export function createReviewService(
         }
       }
 
-      const newestId = newestVersionId(documentId);
-      const newest =
-        newestId === documentId
-          ? undefined
-          : (db.prepare('SELECT uploaded_at FROM documents WHERE id = ?').get(newestId) as
-              | { uploaded_at: number }
-              | undefined);
-
       return {
         documentId,
         title: doc.title,
@@ -337,9 +313,13 @@ export function createReviewService(
         lastFailed,
         canRequest: canRequestAt(documentId, now),
         latestCompleted: readLatestCompleted(documentId),
-        supersededBy: newest ? { documentId: newestId, uploadedAt: newest.uploaded_at } : null,
+        supersededBy: supersededBy(documentId),
         serverTime: now,
       };
     },
+
+    listLawyers: queries.listLawyers,
+    getQuota: queries.getQuota,
+    listDocuments: queries.listDocuments,
   };
 }

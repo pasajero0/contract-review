@@ -6,6 +6,8 @@
   "exports": {
     "./documents": "./src/documents.ts",
     "./errors": "./src/errors.ts",
+    "./lawyers": "./src/lawyers.ts",
+    "./quota": "./src/quota.ts",
     "./reviews": "./src/reviews.ts"
   },
   "scripts": {

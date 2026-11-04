@@ -8,7 +8,7 @@ stage: documents-list
 
 A lawyer picks who they are and sees every document in the workspace, with the state of its latest review and the plan's usage. The API computes all of it; the screen only shows it.
 
-**Built in the POC:** only the `X-Lawyer-Id` check, on `POST /documents/:id/reviews` (AC-8). No other criterion here is built.
+**Built:** the backend. The screen is not built.
 
 ## Decisions
 
@@ -19,6 +19,8 @@ A lawyer picks who they are and sees every document in the workspace, with the s
 | [0011](../../adr/0011-plan-counts-by-request-time.md) | 2026-11-04 | `GET /quota` counts by the month of the request |
 | [0015](../../adr/0015-superseded-version-uses-the-same-page.md) | 2026-11-04 | A replaced version is marked "Read-only" in the list |
 | [0016](../../adr/0016-web-validates-api-responses.md) | 2026-11-04 | A response is validated before the list shows it |
+| [0018](../../adr/0018-reads-need-no-lawyer-identity.md) | 2026-11-04 | Reads work before a lawyer is chosen |
+| [0019](../../adr/0019-what-the-plan-numbers-mean.md) | 2026-11-04 | What used, running and remaining mean |
 
 ## Terms
 
@@ -29,12 +31,7 @@ A lawyer picks who they are and sees every document in the workspace, with the s
 
 ### Contract
 
-Planned. These move to `packages/contract` when built, and this section then only names them.
-
-- `GET /lawyers`
-- `GET /quota` → `{ limit, used, running, remaining, month, resetsAt, timeZone }`
-- `GET /documents` → list with the derived state of the latest review and the version links.
-- Current lawyer: header `X-Lawyer-Id`.
+Exact shapes: `packages/contract`: `lawyers`, `quota`, `documents`. Routes: `getLawyers`, `getQuota`, `getDocuments`. Reads need no `X-Lawyer-Id`.
 
 ### Happy path
 
@@ -43,12 +40,12 @@ Planned. These move to `packages/contract` when built, and this section then onl
 - **AC-3:** WHEN a document has no reviews, THE SYSTEM SHALL give the state "not reviewed".
 - **AC-4:** WHILE a review is running, THE SYSTEM SHALL give the state "in progress" with the findings so far, the deadline and `serverTime`.
 - **AC-5:** WHEN the latest review completed, THE SYSTEM SHALL give the number of findings and how many are high.
-- **AC-6:** WHEN `GET /quota` is called, THE SYSTEM SHALL return used (completed this month), running (not overdue), remaining (limit − used − running) and `resetsAt`, counted as in [request-review](../request-review/SPEC.md) (ADR-0003, ADR-0011).
+- **AC-6:** WHEN `GET /quota` is called, THE SYSTEM SHALL return used (completed this month), running (not overdue), remaining (limit − used − running) and `resetsAt`, counted as in [request-review](../request-review/SPEC.md) (ADR-0003, ADR-0011, ADR-0019).
 - **AC-7:** THE SYSTEM SHALL mark a superseded version with its current version, and list it directly after that version (ADR-0004).
 
 ### Unhappy path
 
-- **AC-8:** WHEN a request records who acted, IF `X-Lawyer-Id` is missing, THEN THE SYSTEM SHALL answer `400` with `lawyer_required`; IF it is unknown, `400` with `lawyer_not_found`.
+- **AC-8:** WHEN a request records who acted, IF `X-Lawyer-Id` is missing, THEN THE SYSTEM SHALL answer `400` with `lawyer_required`; IF it is unknown, `400` with `lawyer_not_found` (ADR-0018).
 - **AC-9:** WHEN the latest review failed, THE SYSTEM SHALL give the reason and, separately, the latest completed review if there is one (partner of AC-5).
 - **AC-10:** IF a running review is past its deadline, THEN THE SYSTEM SHALL give it as failed with `timeout`, even before the sweeper persists it (partner of AC-4).
 
@@ -78,6 +75,17 @@ Planned. These move to `packages/contract` when built, and this section then onl
 
 - **AC-21:** WHEN a completed review has no findings, THE SYSTEM SHALL show "completed, no issues flagged", visibly different from "not reviewed".
 
+## To check in manual testing
+
+Decisions the source documents did not settle. Each is built as written, and can change after the human tries it.
+
+- **Reads need no `X-Lawyer-Id`** (ADR-0018). Only the `POST` that records who acted requires it.
+- **The header for 9 completed + 1 running** reads "Used 9 of 10 · 1 running" (ADR-0019).
+- **List order:** current versions by upload date, newest first, ties by id. Each replaced version sits directly under the version that replaced it. The source documents give no order for current versions.
+- **The label** on a replaced version is "Read-only". The human said "something like read-only, or nothing" (ADR-0015).
+- **Latest review** means the most recently requested one, whatever its outcome.
+- **A response that fails validation** looks the same as an API that does not answer (ADR-0016).
+
 ## Out of scope
 
 - Authentication, roles and permissions by job title: we only store who requested a review.
@@ -89,10 +97,11 @@ Planned. These move to `packages/contract` when built, and this section then onl
 pnpm test
 ```
 
-Tests do not carry AC ids yet, so `.claude/bin/trace` cannot link them. Screen tests need a dependency that is not allowed yet, such as Testing Library; until it is approved, check the frontend by hand in a browser.
+Tests carry AC ids: `.claude/bin/trace <feature>` lists what is not covered. Screen tests need a dependency that is not allowed yet, such as Testing Library; until it is approved, check the frontend by hand in a browser.
 
 ## Changes
 
+- 2026-11-04 — Added "To check in manual testing": decisions the source documents did not settle.
 - 2026-11-04 — AC-8: applies only where a request records who acted, because reads carry no identity and `GET /lawyers` comes before a lawyer is chosen. AC-6: defines used, running and remaining. AC-7: states the order.
 - 2026-11-04 — AC-19: "replaced" becomes "Read-only" — ADR 0015.
 - 2026-11-04 — AC-22: also covers a response that fails validation — ADR 0016.

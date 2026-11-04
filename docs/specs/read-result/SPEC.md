@@ -27,7 +27,7 @@ A lawyer reads the result of a completed review: the clauses the AI flagged, eac
 
 ### Contract
 
-Planned: `GET /documents/:id` → `latestCompleted`: who, when, counts by severity, findings already sorted. It moves to `packages/contract` when built.
+Exact shape: `CompletedReview` in `packages/contract` (`documents`), on route `getDocument`.
 
 ### Happy path
 
@@ -65,6 +65,16 @@ The screen shows findings in the order the API gives and does not sort them.
 - **AC-12:** WHEN a completed review has no findings, THE SYSTEM SHALL show "Reviewed — no issues flagged."
 - **AC-13:** WHEN a superseded version is opened, THE SYSTEM SHALL use the same page, marked "Read-only", with a banner "This version was replaced by the version of 24 Sep" with a link, and label its past reviews "review of an outdated version" (ADR-0004, ADR-0015).
 
+## To check in manual testing
+
+Decisions the source documents did not settle. Each is built as written, and can change after the human tries it.
+
+- **Findings with equal severity and clause** keep their arrival order.
+- **A clause that is not a number** sorts after numeric ones. The samples have none, so nobody has seen it.
+- **The banner on a replaced version** names the newest version in the chain, not the next one, with its upload date (AC-7, AC-13).
+- **Only the latest completed review** is returned. Older ones are stored but cannot be read, and a replaced version shows only its own latest.
+- **After a failure,** the last completed review stays readable, under its own label (AC-32 of request-review).
+
 ## Out of scope
 
 - Editing or commenting on findings.
@@ -76,9 +86,11 @@ The screen shows findings in the order the API gives and does not sort them.
 pnpm test
 ```
 
-Tests do not carry AC ids yet, so `.claude/bin/trace` cannot link them. Screen tests need a dependency that is not allowed yet, such as Testing Library; until it is approved, check the frontend by hand in a browser.
+Tests carry AC ids: `.claude/bin/trace <feature>` lists what is not covered. Screen tests need a dependency that is not allowed yet, such as Testing Library; until it is approved, check the frontend by hand in a browser.
 
 ## Changes
 
+- 2026-11-04 — Added "To check in manual testing": decisions the source documents did not settle.
+- 2026-11-04 — No criterion changed: the backend is built, and tests carry AC ids.
 - 2026-11-04 — AC-13: the same page, marked "Read-only" — ADR 0015.
 - 2026-11-04 — AC-14: also covers a response that fails validation — ADR 0016.

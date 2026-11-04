@@ -25,6 +25,9 @@ Each ADR lists its features under "Applies to". Each spec lists its ADRs in a De
 | [0015](0015-superseded-version-uses-the-same-page.md) | A superseded version uses the same page, with no request button |
 | [0016](0016-web-validates-api-responses.md) | The web app validates every API response with Zod |
 | [0017](0017-proven-libraries-for-polling-and-screen-tests.md) | Proven libraries for polling and screen tests |
+| [0018](0018-reads-need-no-lawyer-identity.md) | Reads need no lawyer identity |
+| [0019](0019-what-the-plan-numbers-mean.md) | What the plan numbers mean |
+| [0020](0020-unknown-document-fails-the-review.md) | A document unknown to the AI engine fails the review |
 
 ## Where the old ids went
 

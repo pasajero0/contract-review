@@ -1,5 +1,7 @@
 import { ErrorBody } from '@lex-poc/contract/errors';
-import { DocumentResponse, getDocument } from '@lex-poc/contract/documents';
+import { DocumentResponse, DocumentsResponse, getDocument, getDocuments } from '@lex-poc/contract/documents';
+import { getLawyers, LawyersResponse } from '@lex-poc/contract/lawyers';
+import { getQuota, QuotaResponse } from '@lex-poc/contract/quota';
 import { getReview, RequestReviewResponse, requestReview, ReviewResponse } from '@lex-poc/contract/reviews';
 import type { FastifyInstance } from 'fastify';
 import type { RequestRejection, ReviewService } from '../services/reviewService.ts';
@@ -75,6 +77,33 @@ export function registerReviewRoutes(app: FastifyInstance, service: ReviewServic
 
       const body: DocumentResponse = document;
       return reply.send(DocumentResponse.parse(body));
+    },
+  });
+
+  app.route({
+    method: getLawyers.method,
+    url: getLawyers.path,
+    handler: async (_request, reply) => {
+      const body: LawyersResponse = { lawyers: service.listLawyers() };
+      return reply.send(LawyersResponse.parse(body));
+    },
+  });
+
+  app.route({
+    method: getQuota.method,
+    url: getQuota.path,
+    handler: async (_request, reply) => {
+      const body: QuotaResponse = service.getQuota();
+      return reply.send(QuotaResponse.parse(body));
+    },
+  });
+
+  app.route({
+    method: getDocuments.method,
+    url: getDocuments.path,
+    handler: async (_request, reply) => {
+      const body: DocumentsResponse = service.listDocuments();
+      return reply.send(DocumentsResponse.parse(body));
     },
   });
 }

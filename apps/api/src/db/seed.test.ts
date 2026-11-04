@@ -20,7 +20,7 @@ describe('seed from samples', () => {
     seed(db, SAMPLES_DIR);
   });
 
-  it('loads 3 lawyers and 13 documents', () => {
+  it('documents-list AC-12: loads 3 lawyers and 13 documents', () => {
     expect(count(db, 'lawyers')).toBe(3);
     expect(count(db, 'documents')).toBe(13);
   });
