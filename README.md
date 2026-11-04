@@ -56,7 +56,7 @@ The partner's requirements are about trust in a legal result, so they win over c
 
 | Point | Decision | ADR |
 |---|---|---|
-| Previous review while a new one runs | Shown, as a separate labelled block | [0001](docs/adr/0001-previous-review-stays-visible.md) |
+| Previous review while a new one runs | Shown in full, as a separate block labelled "Previous review" | [0001](docs/adr/0001-previous-review-stays-visible.md), [0021](docs/adr/0021-previous-review-stays-readable-in-full.md) |
 | Findings before the review finishes | Progress only; we refuse the product manager's request | [0002](docs/adr/0002-findings-only-after-completion.md) |
 | Requests beyond the plan | Rejected, no queue; we refuse the product manager's request | [0003](docs/adr/0003-no-queue-beyond-plan.md) |
 

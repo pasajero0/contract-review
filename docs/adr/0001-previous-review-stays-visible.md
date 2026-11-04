@@ -1,6 +1,6 @@
 # 0001. Keep the previous review visible while a new one runs
 
-- **Status:** Proposed
+- **Status:** Proposed. Made precise by [0021](0021-previous-review-stays-readable-in-full.md): the block shows the review in full.
 - **Date:** 2026-11-04
 - **Applies to:** [request-review](../specs/request-review/SPEC.md)
 

@@ -28,6 +28,7 @@ Each ADR lists its features under "Applies to". Each spec lists its ADRs in a De
 | [0018](0018-reads-need-no-lawyer-identity.md) | Reads need no lawyer identity |
 | [0019](0019-what-the-plan-numbers-mean.md) | What the plan numbers mean |
 | [0020](0020-unknown-document-fails-the-review.md) | A document unknown to the AI engine fails the review |
+| [0021](0021-previous-review-stays-readable-in-full.md) | The previous review stays readable in full |
 
 ## Where the old ids went
 

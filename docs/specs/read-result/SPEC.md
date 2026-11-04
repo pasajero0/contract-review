@@ -8,7 +8,7 @@ stage: read-result
 
 A lawyer reads the result of a completed review: the clauses the AI flagged, each with its severity and explanation. The API sorts the findings and never returns their content for a review that did not complete.
 
-**Built:** the backend. The screen is not built.
+**Built:** the backend and the screen. The screen is not yet checked by hand.
 
 ## Decisions
 
@@ -18,6 +18,7 @@ A lawyer reads the result of a completed review: the clauses the AI flagged, eac
 | [0004](../../adr/0004-superseded-versions-are-read-only.md) | 2026-11-04 | Reviews of a replaced version stay readable, with a banner |
 | [0015](../../adr/0015-superseded-version-uses-the-same-page.md) | 2026-11-04 | A replaced version uses the same page, marked "Read-only" |
 | [0016](../../adr/0016-web-validates-api-responses.md) | 2026-11-04 | A response is validated before findings are shown |
+| [0021](../../adr/0021-previous-review-stays-readable-in-full.md) | 2026-11-04 | During a run or after a failure, the last completed review stays readable in full, labelled "Previous review" |
 
 ## Terms
 
@@ -56,7 +57,7 @@ The screen shows findings in the order the API gives and does not sort them.
 
 ### Unhappy path
 
-- **AC-10:** IF a review did not complete, THEN THE SYSTEM SHALL show no finding content (partner of AC-9; ADR-0002).
+- **AC-10:** IF a review did not complete, THEN THE SYSTEM SHALL show no finding content of that review; the last completed review stays readable in full under the label "Previous review" (partner of AC-9; ADR-0002, ADR-0021).
 - **AC-14:** IF the API does not answer, or its response fails validation, THEN THE SYSTEM SHALL show a short error message and a "Retry" button that repeats the failed call, with no finding content (partner of AC-9; ADR-0016).
 
 ### Edge cases
@@ -73,7 +74,9 @@ Decisions the source documents did not settle. Each is built as written, and can
 - **A clause that is not a number** sorts after numeric ones. The samples have none, so nobody has seen it.
 - **The banner on a replaced version** names the newest version in the chain, not the next one, with its upload date (AC-7, AC-13).
 - **Only the latest completed review** is returned. Older ones are stored but cannot be read, and a replaced version shows only its own latest.
-- **After a failure,** the last completed review stays readable, under its own label (AC-32 of request-review).
+- **After a failure,** the last completed review stays readable in full, under "Previous review" (ADR-0021, AC-32 of request-review).
+- **A replaced version** shows a badge "review of an outdated version" inside its block, in addition to the normal label; the banner's link reads "Open the newest version".
+- **Counts line:** "1 high · 1 medium · 1 low". The source documents give no format.
 
 ## Out of scope
 
@@ -90,6 +93,7 @@ Tests carry AC ids: `.claude/bin/trace <feature>` lists what is not covered. Scr
 
 ## Changes
 
+- 2026-11-04 — AC-10: the ban covers the review that did not complete; the last completed one stays readable — ADR 0021.
 - 2026-11-04 — No criterion changed: "How to verify" now says screen tests run under Vitest with Testing Library (ADR 0017).
 - 2026-11-04 — Added "To check in manual testing": decisions the source documents did not settle.
 - 2026-11-04 — No criterion changed: the backend is built, and tests carry AC ids.

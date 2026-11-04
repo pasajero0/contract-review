@@ -29,6 +29,7 @@ A lawyer requests an AI review of a document, knowing what it costs, and follows
 | [0016](../../adr/0016-web-validates-api-responses.md) | 2026-11-04 | A response is validated before the screen uses it |
 | [0019](../../adr/0019-what-the-plan-numbers-mean.md) | 2026-11-04 | A running review holds a slot, and used counts only completed |
 | [0020](../../adr/0020-unknown-document-fails-the-review.md) | 2026-11-04 | A document unknown to the engine fails the review |
+| [0021](../../adr/0021-previous-review-stays-readable-in-full.md) | 2026-11-04 | During a run or after a failure, the last completed review stays readable in full, labelled "Previous review" |
 
 ## Terms
 
@@ -94,8 +95,8 @@ Whether a review can be requested and how many remain come from `canRequest`; th
 - **AC-22:** WHEN a lawyer clicks "Request review", THE SYSTEM SHALL ask for confirmation: "This uses 1 of your 6 remaining reviews — only if it completes." (ADR-0003).
 - **AC-23:** WHEN one slot remains, THE SYSTEM SHALL say "This is the last review available this month." (ADR-0003).
 - **AC-24:** WHEN the lawyer confirms, THE SYSTEM SHALL send the request and start following the review.
-- **AC-25:** WHILE a review runs, THE SYSTEM SHALL show every lawyer, polling every 1–2 s, "In progress · requested by X · 3 findings so far · 20 s of 60", with no finding content and elapsed time from `serverTime` (ADR-0002, ADR-0007).
-- **AC-26:** WHILE a review runs and an earlier one completed, THE SYSTEM SHALL show the earlier one as a separate block, "Previous review · date · requested by", with a banner that a new review is running (ADR-0001).
+- **AC-25:** WHILE a review runs, THE SYSTEM SHALL show every lawyer, polling every 1–2 s, "In progress · requested by X · 3 findings so far · 20 s of 60", with no finding content of the running review and elapsed time from `serverTime` (ADR-0002, ADR-0007).
+- **AC-26:** WHILE a review runs and an earlier one completed, THE SYSTEM SHALL show the earlier one in full, with its findings, as a separate block, "Previous review · date · requested by", with a banner that a new review is running (ADR-0001, ADR-0021).
 - **AC-27:** WHEN a review completes, THE SYSTEM SHALL stop polling and remove the "Previous review" block; the new review is now the latest.
 
 ### Unhappy path
@@ -153,6 +154,7 @@ Tests carry AC ids: `.claude/bin/trace <feature>` lists what is not covered. Res
 
 ## Changes
 
+- 2026-11-04 — AC-25: the ban covers the running review's own findings. AC-26: the earlier review shows in full — ADR 0021.
 - 2026-11-04 — No criterion changed: the screen is built, and its open points are listed under "To check in manual testing".
 - 2026-11-04 — No criterion changed: "How to verify" now says screen tests run under Vitest with Testing Library (ADR 0017).
 - 2026-11-04 — Added "To check in manual testing": decisions the source documents did not settle.
