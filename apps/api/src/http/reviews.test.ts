@@ -158,6 +158,8 @@ describe('GET /documents/:id', () => {
       current: null,
       lastFailed: null,
       canRequest: { allowed: true, remaining: 10 },
+      latestCompleted: null,
+      supersededBy: null,
       serverTime: NOW,
     });
     expect(DocumentResponse.parse(response.json()).canRequest).toEqual({ allowed: true, remaining: 10 });
@@ -330,10 +332,54 @@ describe('GET /reviews/:id', () => {
     expect(response.body).not.toContain('Distinctive-Explanation-4482');
   });
 
-  it('responds 404 for a review that does not exist', async () => {
+  it('read-result AC-4: responds 404 review_not_found for an unknown review id', async () => {
     const response = await app.inject({ method: 'GET', url: '/reviews/missing' });
 
     expect(response.statusCode).toBe(404);
     expect(response.json()).toEqual({ code: 'review_not_found' });
   });
 });
+
+describe('GET /documents/:id: the result of a review', () => {
+  function get(documentId: string) {
+    return app.inject({ method: 'GET', url: `/documents/${documentId}` });
+  }
+
+  it('read-result AC-1: the raw body carries latestCompleted with the contract keys and nothing else', async () => {
+    const id = RequestReviewResponse.parse((await post('doc-1')).json()).reviewId;
+    service.recordFinding(id, { clause: '2.1', title: 'T', severity: 'high', excerpt: 'E', explanation: 'X' });
+    service.complete(id);
+
+    const response = await get('doc-1');
+    const body = response.json();
+
+    expect(response.statusCode).toBe(200);
+    expect(Object.keys(body.latestCompleted).sort()).toEqual(
+      ['counts', 'findings', 'finishedAt', 'requestedAt', 'requestedBy', 'reviewId'],
+    );
+    expect(Object.keys(body.latestCompleted.counts).sort()).toEqual(['high', 'low', 'medium']);
+    expect(Object.keys(body.latestCompleted.findings[0]).sort()).toEqual(
+      ['clause', 'explanation', 'excerpt', 'severity', 'title'].sort(),
+    );
+    expect(body.latestCompleted).toMatchObject({ reviewId: id, requestedBy: 'Riccardo Fanti', counts: { high: 1 } });
+    expect(DocumentResponse.parse(body).latestCompleted?.findings).toHaveLength(1);
+  });
+
+  it('read-result AC-3: a running review with findings leaves its strings out of the raw body', async () => {
+    const id = RequestReviewResponse.parse((await post('doc-1')).json()).reviewId;
+    service.recordFinding(id, {
+      clause: 'Distinctive-Clause-5521',
+      title: 'Distinctive-Title-5521',
+      severity: 'high',
+      excerpt: 'Distinctive-Excerpt-5521',
+      explanation: 'Distinctive-Explanation-5521',
+    });
+
+    const response = await get('doc-1');
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().latestCompleted).toBeNull();
+    expect(response.body).not.toContain('5521');
+  });
+});
+

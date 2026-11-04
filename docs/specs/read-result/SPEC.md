@@ -8,7 +8,7 @@ stage: read-result
 
 A lawyer reads the result of a completed review: the clauses the AI flagged, each with its severity and explanation. The API sorts the findings and never returns their content for a review that did not complete.
 
-**Built in the POC:** findings are stored, but the API returns only their count (AC-3). `latestCompleted`, the sorting and the screen are not built.
+**Built:** the backend. The screen is not built.
 
 ## Decisions
 

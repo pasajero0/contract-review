@@ -48,6 +48,23 @@ export type CanRequestView =
   | { allowed: false; reason: 'plan_exhausted'; limit: number; resetsAt: number }
   | { allowed: false; reason: 'document_superseded'; currentVersionId: string };
 
+export type FindingView = {
+  clause: string | null;
+  title: string;
+  severity: 'high' | 'medium' | 'low';
+  excerpt: string | null;
+  explanation: string;
+};
+
+export type CompletedReviewView = {
+  reviewId: string;
+  requestedBy: string;
+  requestedAt: number;
+  finishedAt: number;
+  counts: { high: number; medium: number; low: number };
+  findings: FindingView[];
+};
+
 export type DocumentView = {
   documentId: string;
   title: string;
@@ -56,6 +73,8 @@ export type DocumentView = {
   current: RunningReviewView | null;
   lastFailed: FailedReviewView | null;
   canRequest: CanRequestView;
+  latestCompleted: CompletedReviewView | null;
+  supersededBy: { documentId: string; uploadedAt: number } | null;
   serverTime: number;
 };
 

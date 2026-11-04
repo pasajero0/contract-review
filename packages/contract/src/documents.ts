@@ -43,6 +43,29 @@ export const CanRequest = z.union([
 ]);
 export type CanRequest = z.infer<typeof CanRequest>;
 
+export const Finding = z.object({
+  clause: z.string().nullable(),
+  title: z.string(),
+  severity: z.enum(['high', 'medium', 'low']),
+  excerpt: z.string().nullable(),
+  explanation: z.string(),
+});
+export type Finding = z.infer<typeof Finding>;
+
+export const CompletedReview = z.object({
+  reviewId: z.string(),
+  requestedBy: z.string(), // the lawyer's name
+  requestedAt: z.number().int(),
+  finishedAt: z.number().int(),
+  counts: z.object({
+    high: z.number().int().nonnegative(),
+    medium: z.number().int().nonnegative(),
+    low: z.number().int().nonnegative(),
+  }),
+  findings: z.array(Finding),
+});
+export type CompletedReview = z.infer<typeof CompletedReview>;
+
 export const DocumentResponse = z.object({
   documentId: z.string(),
   title: z.string(),
@@ -51,6 +74,9 @@ export const DocumentResponse = z.object({
   current: RunningReview.nullable(),
   lastFailed: FailedReview.nullable(),
   canRequest: CanRequest,
+  latestCompleted: CompletedReview.nullable(),
+  // The newest version at the end of the chain; null for a current version.
+  supersededBy: z.object({ documentId: z.string(), uploadedAt: z.number().int() }).nullable(),
   serverTime: z.number().int(),
 });
 export type DocumentResponse = z.infer<typeof DocumentResponse>;

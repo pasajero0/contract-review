@@ -1,12 +1,15 @@
 import { inTransaction, type Db } from '../db/connection.ts';
 import type { Config } from '../domain/config.ts';
+import { orderFindings } from '../domain/findingOrder.ts';
 import { monthWindow } from '../domain/monthWindow.ts';
 import {
   effectiveOutcome,
   isSeverity,
   type CanRequestView,
+  type CompletedReviewView,
   type DocumentView,
   type FailureReason,
+  type FindingView,
   type IncomingFinding,
   type ReviewStatus,
   type ReviewView,
@@ -88,17 +91,54 @@ export function createReviewService(
     return changes === 1;
   }
 
+  // The newest version at the end of the chain that starts at documentId.
+  function newestVersionId(documentId: string): string {
+    let id = documentId;
+    for (;;) {
+      const newer = db.prepare('SELECT id FROM documents WHERE supersedes_id = ?').get(id) as
+        | { id: string }
+        | undefined;
+      if (!newer) return id;
+      id = newer.id;
+    }
+  }
+
+  // The only place that reads finding content, and only for a completed review.
+  function readLatestCompleted(documentId: string): CompletedReviewView | null {
+    const review = db
+      .prepare(
+        `SELECT reviews.id AS id, lawyers.name AS name, requested_at, finished_at
+         FROM reviews JOIN lawyers ON lawyers.id = reviews.requested_by
+         WHERE document_id = ? AND status = 'completed'
+         ORDER BY reviews.requested_at DESC, reviews.rowid DESC LIMIT 1`,
+      )
+      .get(documentId) as { id: string; name: string; requested_at: number; finished_at: number } | undefined;
+    if (!review) return null;
+
+    const rows = db
+      .prepare(
+        `SELECT clause, title, severity, excerpt, explanation FROM findings
+         WHERE review_id = ? ORDER BY seq`,
+      )
+      .all(review.id) as FindingView[];
+    const findings = orderFindings(rows);
+    const counts = { high: 0, medium: 0, low: 0 };
+    for (const item of findings) counts[item.severity] += 1;
+
+    return {
+      reviewId: review.id,
+      requestedBy: review.name,
+      requestedAt: review.requested_at,
+      finishedAt: review.finished_at,
+      counts,
+      findings,
+    };
+  }
+
   // The one set of checks, for the request and for the read. Writes nothing.
   // An overdue running review blocks nothing and holds no plan slot.
   function canRequestAt(documentId: string, now: number): CanRequestView {
-    let currentVersionId = documentId;
-    for (;;) {
-      const newer = db
-        .prepare('SELECT id FROM documents WHERE supersedes_id = ?')
-        .get(currentVersionId) as { id: string } | undefined;
-      if (!newer) break;
-      currentVersionId = newer.id;
-    }
+    const currentVersionId = newestVersionId(documentId);
     if (currentVersionId !== documentId) {
       return { allowed: false, reason: 'document_superseded', currentVersionId };
     }
@@ -280,6 +320,14 @@ export function createReviewService(
         }
       }
 
+      const newestId = newestVersionId(documentId);
+      const newest =
+        newestId === documentId
+          ? undefined
+          : (db.prepare('SELECT uploaded_at FROM documents WHERE id = ?').get(newestId) as
+              | { uploaded_at: number }
+              | undefined);
+
       return {
         documentId,
         title: doc.title,
@@ -288,6 +336,8 @@ export function createReviewService(
         current,
         lastFailed,
         canRequest: canRequestAt(documentId, now),
+        latestCompleted: readLatestCompleted(documentId),
+        supersededBy: newest ? { documentId: newestId, uploadedAt: newest.uploaded_at } : null,
         serverTime: now,
       };
     },

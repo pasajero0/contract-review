@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { FixedRandom } from '../adapters/fixedRandom.ts';
 import { ManualClock } from '../adapters/manualClock.ts';
@@ -5,6 +7,7 @@ import { openDatabase, type Db } from '../db/connection.ts';
 import { DEFAULT_CONFIG } from '../domain/config.ts';
 import { createReviewService, type ReviewService, type StartedReview } from './reviewService.ts';
 
+const SAMPLES_DIR = fileURLToPath(new URL('../../../../samples/', import.meta.url));
 const NOV_15 = Date.UTC(2026, 10, 15, 12);
 const OCT_15 = Date.UTC(2026, 9, 15, 12);
 const TIMEOUT = DEFAULT_CONFIG.reviewTimeoutMs;
@@ -695,5 +698,206 @@ describe('superseded chain', () => {
 
     expect(service.getDocument('v1')?.canRequest).toEqual(expected);
     expect(service.getDocument('v2')?.canRequest).toEqual(expected);
+  });
+});
+
+describe('getDocument: the result of a review', () => {
+  type Incoming = Parameters<ReviewService['recordFinding']>[1];
+
+  function finding(severity: string, clause: string | null, title: string): Incoming {
+    return { clause, title, severity, excerpt: clause === null ? null : `Excerpt of ${title}`, explanation: `Why ${title}` };
+  }
+
+  /** A review through the service: findings recorded, then completed. */
+  function completeReview(documentId: string, findings: Incoming[], lawyerId = 'lawyer-1'): string {
+    const id = newId(service.requestReview(documentId, lawyerId));
+    for (const item of findings) service.recordFinding(id, item);
+    expect(service.complete(id)).toBe(true);
+    return id;
+  }
+
+  function insertFinding(reviewId: string, seq: number, item: Incoming): void {
+    db.prepare(
+      `INSERT INTO findings (id, review_id, seq, clause, title, severity, excerpt, explanation, received_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+    ).run(`f-${reviewId}-${seq}`, reviewId, seq, item.clause, item.title, item.severity, item.excerpt, item.explanation);
+  }
+
+  it('read-result AC-1: returns the completed review with who, when, counts and every finding field', async () => {
+    const first = finding('high', '5.1', 'Uncapped');
+    const second = finding('low', '2', 'Typo');
+    const id = newId(service.requestReview('doc-1', 'lawyer-2'));
+    service.recordFinding(id, first);
+    service.recordFinding(id, second);
+    await clock.advance(5000);
+    service.complete(id);
+
+    expect(service.getDocument('doc-1')?.latestCompleted).toEqual({
+      reviewId: id,
+      requestedBy: 'Sofia Greco',
+      requestedAt: NOV_15,
+      finishedAt: NOV_15 + 5000,
+      counts: { high: 1, medium: 0, low: 1 },
+      findings: [first, second],
+    });
+  });
+
+  it('read-result AC-1: with two completed reviews, returns only the latest', async () => {
+    completeReview('doc-1', [finding('high', '1', 'Old finding')]);
+    await clock.advance(1000);
+    const latest = completeReview('doc-1', [finding('medium', '2', 'New finding')], 'lawyer-2');
+
+    const completed = service.getDocument('doc-1')?.latestCompleted;
+
+    expect(completed?.reviewId).toBe(latest);
+    expect(completed?.requestedBy).toBe('Sofia Greco');
+    expect(completed?.counts).toEqual({ high: 0, medium: 1, low: 0 });
+    expect(completed?.findings.map((item) => item.title)).toEqual(['New finding']);
+  });
+
+  it('read-result AC-1: a document never reviewed has no latestCompleted', () => {
+    expect(service.getDocument('doc-1')?.latestCompleted).toBeNull();
+  });
+
+  it('read-result AC-2: sorts findings that arrive out of order', () => {
+    completeReview('doc-1', [
+      finding('low', '1', 'low 1'),
+      finding('medium', '12.1', 'medium 12.1'),
+      finding('high', '12.1', 'high 12.1'),
+      finding('medium', '4.2', 'medium 4.2'),
+      finding('high', '4.2', 'high 4.2'),
+    ]);
+
+    expect(service.getDocument('doc-1')?.latestCompleted?.findings.map((item) => item.title)).toEqual([
+      'high 4.2',
+      'high 12.1',
+      'medium 4.2',
+      'medium 12.1',
+      'low 1',
+    ]);
+  });
+
+  const SECRETS = ['Secret-Clause-8841', 'Secret-Title-8841', 'Secret-Excerpt-8841', 'Secret-Explanation-8841'];
+  const SECRET_FINDING: Incoming = {
+    clause: SECRETS[0] ?? '',
+    title: SECRETS[1] ?? '',
+    severity: 'high',
+    excerpt: SECRETS[2] ?? '',
+    explanation: SECRETS[3] ?? '',
+  };
+
+  /** Starts a review on doc-1, records the secret finding, and leaves it running, failed or overdue. */
+  async function leaveUnfinished(kind: 'running' | 'ai_error' | 'timeout'): Promise<void> {
+    const id = newId(service.requestReview('doc-1', 'lawyer-1'));
+    service.recordFinding(id, SECRET_FINDING);
+    if (kind === 'ai_error') service.fail(id, 'ai_error');
+    if (kind === 'timeout') await clock.advance(TIMEOUT);
+  }
+
+  it.each(['running', 'ai_error', 'timeout'] as const)(
+    'read-result AC-3: a %s review hides its findings: only the earlier completed review is shown',
+    async (kind) => {
+      const earlier = completeReview('doc-1', [finding('low', '1', 'Earlier finding')]);
+      await clock.advance(1000);
+      await leaveUnfinished(kind);
+
+      const view = service.getDocument('doc-1');
+
+      expect(view?.latestCompleted?.reviewId).toBe(earlier);
+      expect(view?.latestCompleted?.findings.map((item) => item.title)).toEqual(['Earlier finding']);
+      for (const secret of SECRETS) expect(JSON.stringify(view)).not.toContain(secret);
+    },
+  );
+
+  it.each(['running', 'ai_error', 'timeout'] as const)(
+    'read-result AC-3: a %s review with no earlier completed one gives null, and its findings appear nowhere',
+    async (kind) => {
+      await leaveUnfinished(kind);
+
+      const view = service.getDocument('doc-1');
+
+      expect(view?.latestCompleted).toBeNull();
+      for (const secret of SECRETS) expect(JSON.stringify(view)).not.toContain(secret);
+    },
+  );
+
+  it('read-result AC-5: a finding with no clause and no excerpt returns null for both and sorts last in its severity', () => {
+    const nothing: Incoming = { clause: null, title: 'No DPA', severity: 'medium', excerpt: null, explanation: 'Missing' };
+    completeReview('doc-1', [nothing, finding('medium', '30', 'medium 30'), finding('medium', '2', 'medium 2')]);
+
+    const findings = service.getDocument('doc-1')?.latestCompleted?.findings;
+
+    expect(findings?.map((item) => item.title)).toEqual(['medium 2', 'medium 30', 'No DPA']);
+    expect(findings?.[2]).toEqual(nothing);
+  });
+
+  it('read-result AC-6: a completed review with no findings gives an empty list and zero counts, not null', () => {
+    const id = completeReview('doc-1', []);
+
+    expect(service.getDocument('doc-1')?.latestCompleted).toMatchObject({
+      reviewId: id,
+      counts: { high: 0, medium: 0, low: 0 },
+      findings: [],
+    });
+    expect(service.getDocument('doc-2')?.latestCompleted).toBeNull();
+  });
+
+  describe('a chain v1, v2, v3', () => {
+    beforeEach(() => {
+      addDocument('v1');
+      addDocument('v2', 'v1');
+      addDocument('v3', 'v2');
+      db.exec(`UPDATE documents SET uploaded_at = 1000 WHERE id = 'v1';
+               UPDATE documents SET uploaded_at = 2000 WHERE id = 'v2';
+               UPDATE documents SET uploaded_at = 3000 WHERE id = 'v3'`);
+    });
+
+    it('read-result AC-7: a superseded version keeps its completed review and names the newest version and its date', () => {
+      // The finding goes in while the review runs: the database rejects one on a finished review.
+      const reviewId = addReviewOn('v1', 'running', OCT_15);
+      insertFinding(reviewId, 1, finding('high', '2.1', 'Old version finding'));
+      db.prepare("UPDATE reviews SET status = 'completed', finished_at = ? WHERE id = ?").run(OCT_15 + 1000, reviewId);
+
+      const view = service.getDocument('v1');
+
+      expect(view?.latestCompleted).toMatchObject({
+        reviewId,
+        requestedAt: OCT_15,
+        counts: { high: 1, medium: 0, low: 0 },
+      });
+      expect(view?.latestCompleted?.findings.map((item) => item.title)).toEqual(['Old version finding']);
+      expect(view?.supersededBy).toEqual({ documentId: 'v3', uploadedAt: 3000 });
+    });
+
+    it('read-result AC-7: v1 and v2 both point to v3', () => {
+      expect(service.getDocument('v1')?.supersededBy).toEqual({ documentId: 'v3', uploadedAt: 3000 });
+      expect(service.getDocument('v2')?.supersededBy).toEqual({ documentId: 'v3', uploadedAt: 3000 });
+    });
+
+    it('read-result AC-7: the current version has supersededBy null', () => {
+      expect(service.getDocument('v3')?.supersededBy).toBeNull();
+      expect(service.getDocument('doc-1')?.supersededBy).toBeNull();
+    });
+  });
+
+  it('read-result AC-8: returns all 18 findings of the franchise agreement, 5 high, 8 medium, 5 low, in order', () => {
+    const documents = JSON.parse(readFileSync(`${SAMPLES_DIR}documents.json`, 'utf8')) as {
+      title: string;
+      findings: Incoming[];
+    }[];
+    const franchise = documents.find((doc) => doc.title.startsWith('Franchise agreement'));
+    if (!franchise) throw new Error('The franchise agreement is missing from the samples');
+    addDocument('franchise');
+
+    completeReview('franchise', franchise.findings);
+
+    const completed = service.getDocument('franchise')?.latestCompleted;
+    expect(completed?.findings).toHaveLength(18);
+    expect(completed?.counts).toEqual({ high: 5, medium: 8, low: 5 });
+    expect(completed?.findings.map((item) => `${item.severity} ${item.clause}`)).toEqual([
+      'high 3.1', 'high 4.2', 'high 13.2', 'high 15.3', 'high 16.1',
+      'medium 5.2', 'medium 6.3', 'medium 7.1', 'medium 9.1', 'medium 10.2', 'medium 16.4', 'medium 17.3', 'medium 18.2',
+      'low 8.4', 'low 11.4', 'low 14.1', 'low 19.1', 'low 20',
+    ]);
   });
 });
