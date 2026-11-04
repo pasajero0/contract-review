@@ -1,0 +1,14 @@
+{
+  "name": "@lex-poc/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node --watch src/main.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@lex-poc/contract": "workspace:*",
+    "fastify": "5.12.8"
+  }
+}
