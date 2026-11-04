@@ -21,6 +21,10 @@ Each ADR lists its features under "Applies to". Each spec lists its ADRs in a De
 | [0011](0011-plan-counts-by-request-time.md) | Count the plan by request time, with a reservation |
 | [0012](0012-unknown-severity-fails-review.md) | An unknown severity fails the whole review |
 | [0013](0013-tooling-choices.md) | Tooling: Next.js defaults, exact versions, shadcn/ui |
+| [0014](0014-build-final-solution-on-the-poc.md) | Build the final solution on the POC |
+| [0015](0015-superseded-version-uses-the-same-page.md) | A superseded version uses the same page, with no request button |
+| [0016](0016-web-validates-api-responses.md) | The web app validates every API response with Zod |
+| [0017](0017-proven-libraries-for-polling-and-screen-tests.md) | Proven libraries for polling and screen tests |
 
 ## Where the old ids went
 
@@ -32,7 +36,7 @@ Each ADR lists its features under "Applies to". Each spec lists its ADRs in a De
 | A1 | 0005 |
 | A2, A3, A12, A16 | [backend](../architecture/backend.md) |
 | A17 | [frontend](../architecture/frontend.md) |
-| A5 | `README.md` |
+| A5 | Replaced by 0014 |
 | A8, A9 | 0006 |
 | A10 | 0007 |
 | A11, A14, M16, M19 | 0008 |

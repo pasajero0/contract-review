@@ -17,6 +17,8 @@ A lawyer picks who they are and sees every document in the workspace, with the s
 | [0003](../../adr/0003-no-queue-beyond-plan.md) | 2026-11-04 | The plan's usage is always visible |
 | [0004](../../adr/0004-superseded-versions-are-read-only.md) | 2026-11-04 | A replaced version is listed under the current one |
 | [0011](../../adr/0011-plan-counts-by-request-time.md) | 2026-11-04 | `GET /quota` counts by the month of the request |
+| [0015](../../adr/0015-superseded-version-uses-the-same-page.md) | 2026-11-04 | A replaced version is marked "Read-only" in the list |
+| [0016](../../adr/0016-web-validates-api-responses.md) | 2026-11-04 | A response is validated before the list shows it |
 
 ## Terms
 
@@ -65,12 +67,12 @@ Planned. These move to `packages/contract` when built, and this section then onl
 - **AC-16:** WHILE a review is running, THE SYSTEM SHALL show "in progress" with N findings so far and X s of 60, with elapsed time from `serverTime`.
 - **AC-17:** WHEN the latest review completed, THE SYSTEM SHALL show N findings, of which high.
 - **AC-18:** THE SYSTEM SHALL always show the plan's usage in the header: "Used 4 of 10 · 1 running · resets on 1 December" (ADR-0003).
-- **AC-19:** THE SYSTEM SHALL list a superseded version under its current version, marked "replaced" (ADR-0004).
+- **AC-19:** THE SYSTEM SHALL list a superseded version under its current version, marked "Read-only" (ADR-0004, ADR-0015).
 
 ### Unhappy path
 
 - **AC-20:** WHEN the latest review failed, THE SYSTEM SHALL show the reason and, below it, the latest completed review if there is one (partner of AC-17).
-- **AC-22:** IF the API does not answer, THEN THE SYSTEM SHALL show a short error message and a "Retry" button that repeats the failed call (partner of AC-14).
+- **AC-22:** IF the API does not answer, or its response fails validation, THEN THE SYSTEM SHALL show a short error message and a "Retry" button that repeats the failed call (partner of AC-14; ADR-0016).
 
 ### Edge cases
 
@@ -90,3 +92,6 @@ pnpm test
 Tests do not carry AC ids yet, so `.claude/bin/trace` cannot link them. Screen tests need a dependency that is not allowed yet, such as Testing Library; until it is approved, check the frontend by hand in a browser.
 
 ## Changes
+
+- 2026-11-04 — AC-19: "replaced" becomes "Read-only" — ADR 0015.
+- 2026-11-04 — AC-22: also covers a response that fails validation — ADR 0016.

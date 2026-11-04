@@ -25,6 +25,8 @@ A lawyer requests an AI review of a document, knowing what it costs, and follows
 | [0009](../../adr/0009-utc-storage-workspace-time-zone.md) | 2026-11-04 | The month is computed in the workspace time zone |
 | [0011](../../adr/0011-plan-counts-by-request-time.md) | 2026-11-04 | A review counts in the month of its request, and a running one holds a slot |
 | [0012](../../adr/0012-unknown-severity-fails-review.md) | 2026-11-04 | An unknown severity fails the review |
+| [0015](../../adr/0015-superseded-version-uses-the-same-page.md) | 2026-11-04 | A superseded version has no request button |
+| [0016](../../adr/0016-web-validates-api-responses.md) | 2026-11-04 | A response is validated before the screen uses it |
 
 ## Terms
 
@@ -99,10 +101,10 @@ Whether a review can be requested and how many remain come from `canRequest`; th
 - **AC-28:** WHEN `canRequest` says a review is running, THE SYSTEM SHALL disable the button and show "A review is already running — started by Riccardo Fanti at 14:02."
 - **AC-29:** WHEN `canRequest` says the plan is used up, THE SYSTEM SHALL disable the button and show "10 of 10 used. Resets on 1 December." (ADR-0003).
 - **AC-30:** IF the server rejects a request anyway, THEN THE SYSTEM SHALL show the same reason as AC-28, AC-29 or AC-31, and create nothing on screen (partner of AC-24).
-- **AC-31:** WHEN the document is superseded, THE SYSTEM SHALL offer no request. Whether the button is absent or disabled is open in ADR-0004.
+- **AC-31:** WHEN the document is superseded, THE SYSTEM SHALL show the same page with no "Request review" button (ADR-0004, ADR-0015).
 - **AC-32:** WHEN a review fails with `ai_error`, THE SYSTEM SHALL show "Review did not complete: AI error after 3 findings. There is no result.", a "Retry" button, and any previous completed review with its label (partner of AC-27).
 - **AC-33:** WHEN a review fails with `timeout`, THE SYSTEM SHALL show "Review did not complete within 60 seconds. There is no result." and a "Retry" button (partner of AC-27).
-- **AC-35:** IF the API does not answer, THEN THE SYSTEM SHALL show a short error message and a "Retry" button that repeats the failed call. It SHALL NOT show a running review as failed because of this. Repeating a request is safe: the server rejects a second review with `review_in_progress` (partner of AC-24, AC-25).
+- **AC-35:** IF the API does not answer, or its response fails validation, THEN THE SYSTEM SHALL show a short error message and a "Retry" button that repeats the failed call. It SHALL NOT show a running review as failed because of this. Repeating a request is safe: the server rejects a second review with `review_in_progress` (partner of AC-24, AC-25; ADR-0016).
 
 ### Edge cases
 
@@ -129,3 +131,6 @@ pnpm test
 Tests do not carry AC ids yet, so `.claude/bin/trace` cannot link them. Restart (AC-20) by hand: start a review, stop the API, start it again, and after 60 s the review is `failed` / `timeout`. Screen tests need a dependency that is not allowed yet, such as Testing Library; until it is approved, check the frontend by hand in a browser.
 
 ## Changes
+
+- 2026-11-04 — AC-31: the open point is settled, with no button on the same page — ADR 0015.
+- 2026-11-04 — AC-35: also covers a response that fails validation — ADR 0016.

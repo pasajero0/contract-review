@@ -26,6 +26,7 @@ packages/contract
 ## Rules
 
 - **No business rules here:** whether a review can be requested, the order of findings and the remaining plan come from the API.
+- **Every response is validated:** in `api/`, a response starts as `unknown` and is parsed with its schema from `packages/contract` ([0016](../adr/0016-web-validates-api-responses.md)).
 - The API is reached through a Next.js rewrite: `/api/*` goes to `http://127.0.0.1:3001/*`. One origin, no CORS.
 - Components are generated into `apps/web/src/ui/`. We write no styles of our own; Tailwind only for page layout.
 

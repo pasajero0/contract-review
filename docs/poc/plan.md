@@ -160,7 +160,7 @@ samples/
 
 ## 8. Open questions
 
-Found while reviewing these docs. **None of these is decided.** Each shows the agent's proposal; settle it before the stage named.
+Found while reviewing these docs. Each shows the agent's proposal at the time. **Since settled:** the first by ADR 0015 (no button), the second by ADR 0016 (validate with Zod, against the proposal), the third by `stagePattern` `^f-([a-z-]+)$`.
 
 | Stage | Question | Proposal |
 |---|---|---|

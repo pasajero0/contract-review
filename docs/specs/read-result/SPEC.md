@@ -16,6 +16,8 @@ A lawyer reads the result of a completed review: the clauses the AI flagged, eac
 |---|---|---|
 | [0002](../../adr/0002-findings-only-after-completion.md) | 2026-11-04 | Content is shown only for a `completed` review |
 | [0004](../../adr/0004-superseded-versions-are-read-only.md) | 2026-11-04 | Reviews of a replaced version stay readable, with a banner |
+| [0015](../../adr/0015-superseded-version-uses-the-same-page.md) | 2026-11-04 | A replaced version uses the same page, marked "Read-only" |
+| [0016](../../adr/0016-web-validates-api-responses.md) | 2026-11-04 | A response is validated before findings are shown |
 
 ## Terms
 
@@ -55,13 +57,13 @@ The screen shows findings in the order the API gives and does not sort them.
 ### Unhappy path
 
 - **AC-10:** IF a review did not complete, THEN THE SYSTEM SHALL show no finding content (partner of AC-9; ADR-0002).
-- **AC-14:** IF the API does not answer, THEN THE SYSTEM SHALL show a short error message and a "Retry" button that repeats the failed call, with no finding content (partner of AC-9).
+- **AC-14:** IF the API does not answer, or its response fails validation, THEN THE SYSTEM SHALL show a short error message and a "Retry" button that repeats the failed call, with no finding content (partner of AC-9; ADR-0016).
 
 ### Edge cases
 
 - **AC-11:** WHEN a finding has no clause, THE SYSTEM SHALL show "Not in the contract".
 - **AC-12:** WHEN a completed review has no findings, THE SYSTEM SHALL show "Reviewed — no issues flagged."
-- **AC-13:** WHEN a superseded version is opened, THE SYSTEM SHALL show a banner "This version was replaced by the version of 24 Sep" with a link, and label its past reviews "review of an outdated version" (ADR-0004).
+- **AC-13:** WHEN a superseded version is opened, THE SYSTEM SHALL use the same page, marked "Read-only", with a banner "This version was replaced by the version of 24 Sep" with a link, and label its past reviews "review of an outdated version" (ADR-0004, ADR-0015).
 
 ## Out of scope
 
@@ -77,3 +79,6 @@ pnpm test
 Tests do not carry AC ids yet, so `.claude/bin/trace` cannot link them. Screen tests need a dependency that is not allowed yet, such as Testing Library; until it is approved, check the frontend by hand in a browser.
 
 ## Changes
+
+- 2026-11-04 — AC-13: the same page, marked "Read-only" — ADR 0015.
+- 2026-11-04 — AC-14: also covers a response that fails validation — ADR 0016.

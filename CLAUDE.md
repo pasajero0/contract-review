@@ -1,28 +1,48 @@
-# Contract review POC — working rules
+# Contract review — working rules
 
 Read these first, in this order:
 1. `CODEMAP.md` — where everything lives.
-2. `docs/poc/plan.md` — what to build in this POC, stage by stage.
-3. `docs/adr/` — why: architecture, domain rules, product decisions.
-4. `docs/specs/` — how each feature behaves, backend and frontend.
+2. "Stages" below — what is left to build.
+3. `docs/specs/` — how each feature behaves, backend and frontend.
+4. `docs/adr/` — why: architecture, domain rules, product decisions.
 5. `docs/architecture/` — how the code is organised.
 
-This is a throwaway spike. Its goal is to remove technical risk, not to build the solution.
+The POC is finished (tag `poc-end`, archive in `docs/poc/`). We build the final solution on it (ADR 0014).
+
+## Stages
+
+Each stage is one commit. The agent stops and shows the result after stages 4, 7 and 9.
+
+| # | Stage | Done when |
+|---|---|---|
+| 0 | Start: tag, decisions, dependencies | Done |
+| 1 | Contract: split by subject, describe routes, check subpath imports | Renaming a field fails `typecheck` |
+| 2 | API `request-review`: `canRequest`, `GET /documents/:id`, AC ids in tests | `trace request-review` links every Backend criterion |
+| 3 | API `read-result`: findings, sorting, `latestCompleted` | Content only for `completed` |
+| 4 | API `documents-list`: `GET /documents`, `/quota`, `/lawyers` | Every Backend criterion passes |
+| 5 | Screen `documents-list` | The human clicked through it |
+| 6 | Screen `request-review` | The human saw success, failure and timeout |
+| 7 | Screen `read-result` | The human read a result |
+| 8 | Final check: one `code-reviewer`, fixes, every scenario in a browser, plan exhaustion and a late event on a real server | All checks pass; scenario table filled in |
+| 9 | Hand-in: README as the brief requires, cleaned session log | The human read everything and pushes |
+
+If time runs short, cut screen tests first. Never cut the brief's rules, the three disputed decisions, the README or the log. The log keeps the agent's mistakes; only personal and confidential data is removed.
 
 ## How we work
 
-- Work **one stage at a time** from `docs/poc/plan.md`. Stop when the stage's done criteria pass.
+- Work **one stage at a time** from "Stages" above. Feature stages use a branch `f-<feature>`.
 - **Keep reports short:** a TLDR in bullets, "Done: ..." then "Questions: ...". The human asks to expand anything unclear.
 - At the end of each stage, the report also names the commands run with their result, and **"Decisions not in plan"**: anything decided that the docs do not cover.
-- Commits: one stage = one commit, with generated shadcn components in their own commit (`docs/adr/0013-tooling-choices.md`). This is a POC, so the agent may commit a finished stage. Never push.
+- Commits: one stage = one commit, with generated shadcn components in their own commit (`docs/adr/0013-tooling-choices.md`). The agent may commit a finished stage. Never push.
 - Commit description: bullets saying what was done and, where useful, why.
 - Diary: `.claude/tmp/poc-diary.md`, written during each stage: what was done, difficulties and mistakes, decisions not in the plan, what may not work.
-- Stages 2, 4 and 5: **tests first.** Write the tests from the stage's done criteria, stop, wait for review, then implement.
+- **Tests first, through subagents.** `test-writer` writes failing tests from the spec's criteria, named `<feature> AC-n: …`. `implementer` then writes the code. The main session plans and reviews.
 - **Never change a test to make it pass.** If a test looks wrong, stop and explain why.
-- Dependencies: only the ones allowed in `docs/poc/plan.md` §3, at exact versions. Ask before adding anything else.
+- Dependencies: only the ones allowed in `docs/poc/plan.md` §3 and ADR 0017, at exact versions. Ask before adding anything else. Prefer a proven library to hand-written code.
 - No Docker.
+- **Final solution: mechanics first.** Screens stay minimal from the start: shadcn defaults and basic layout, no visual polish. Keep what carries behaviour or a product decision: exact on-screen texts, disabled buttons, the confirmation dialog, and labels that keep old or partial results from reading as final.
 - English everywhere in the repository: code, comments, commit messages, docs.
-- If the docs are unclear or contradict each other, stop and ask. Do not guess. Known open points are in `docs/poc/plan.md` §8.
+- If the docs are unclear or contradict each other, stop and ask. Do not guess.
 
 ## Documentation
 
