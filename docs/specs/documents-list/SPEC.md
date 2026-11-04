@@ -43,12 +43,12 @@ Planned. These move to `packages/contract` when built, and this section then onl
 - **AC-3:** WHEN a document has no reviews, THE SYSTEM SHALL give the state "not reviewed".
 - **AC-4:** WHILE a review is running, THE SYSTEM SHALL give the state "in progress" with the findings so far, the deadline and `serverTime`.
 - **AC-5:** WHEN the latest review completed, THE SYSTEM SHALL give the number of findings and how many are high.
-- **AC-6:** WHEN `GET /quota` is called, THE SYSTEM SHALL return used, running, remaining and `resetsAt`, counted as in [request-review](../request-review/SPEC.md) (ADR-0003, ADR-0011).
-- **AC-7:** THE SYSTEM SHALL mark a superseded version as replaced and link it with its current version (ADR-0004).
+- **AC-6:** WHEN `GET /quota` is called, THE SYSTEM SHALL return used (completed this month), running (not overdue), remaining (limit − used − running) and `resetsAt`, counted as in [request-review](../request-review/SPEC.md) (ADR-0003, ADR-0011).
+- **AC-7:** THE SYSTEM SHALL mark a superseded version with its current version, and list it directly after that version (ADR-0004).
 
 ### Unhappy path
 
-- **AC-8:** IF `X-Lawyer-Id` is missing, THEN THE SYSTEM SHALL answer `400` with `lawyer_required`; IF it is unknown, `400` with `lawyer_not_found`.
+- **AC-8:** WHEN a request records who acted, IF `X-Lawyer-Id` is missing, THEN THE SYSTEM SHALL answer `400` with `lawyer_required`; IF it is unknown, `400` with `lawyer_not_found`.
 - **AC-9:** WHEN the latest review failed, THE SYSTEM SHALL give the reason and, separately, the latest completed review if there is one (partner of AC-5).
 - **AC-10:** IF a running review is past its deadline, THEN THE SYSTEM SHALL give it as failed with `timeout`, even before the sweeper persists it (partner of AC-4).
 
@@ -93,5 +93,6 @@ Tests do not carry AC ids yet, so `.claude/bin/trace` cannot link them. Screen t
 
 ## Changes
 
+- 2026-11-04 — AC-8: applies only where a request records who acted, because reads carry no identity and `GET /lawyers` comes before a lawyer is chosen. AC-6: defines used, running and remaining. AC-7: states the order.
 - 2026-11-04 — AC-19: "replaced" becomes "Read-only" — ADR 0015.
 - 2026-11-04 — AC-22: also covers a response that fails validation — ADR 0016.
