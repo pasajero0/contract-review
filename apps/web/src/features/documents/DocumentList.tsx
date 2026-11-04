@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { DocumentsResponse, type DocumentListItem } from '@lex-poc/contract/documents';
 import { apiGet } from '@/api/client';
+import { queryKeys } from '@/api/queryKeys';
 import { Alert } from '@/ui/alert';
 import { Badge } from '@/ui/badge';
 import { Button } from '@/ui/button';
@@ -64,7 +65,7 @@ function StateView({ state, serverTime }: { state: DocumentListItem['state']; se
 
 export function DocumentList() {
   const query = useQuery({
-    queryKey: ['documents'],
+    queryKey: queryKeys.documents,
     queryFn: () => apiGet('/documents', DocumentsResponse),
     refetchInterval: (q) =>
       q.state.data?.documents.some((d) => d.state.kind === 'in_progress') ? POLL_MS : false,

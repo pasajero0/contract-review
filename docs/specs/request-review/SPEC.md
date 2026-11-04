@@ -8,7 +8,7 @@ stage: request-review
 
 A lawyer requests an AI review of a document, knowing what it costs, and follows it until it completes or fails. The API ends each review exactly once, under the plan and the 60-second rule.
 
-**Built:** the backend. In the frontend, from the POC, only a button that sends the `POST` through the Next.js rewrite and shows the JSON answer, checked with a real click.
+**Built:** the backend and the screen. The screen is not yet checked by hand.
 
 ## Decisions
 
@@ -129,6 +129,12 @@ Decisions the source documents did not settle. Each is built as written, and can
 - **A failing fake review** takes the same 5–30 s as a normal one. The brief does not say.
 - **"Retry" after no answer** repeats the call. If the first request did reach the server, the second gets `review_in_progress`, and the screen shows that reason (AC-30, AC-35).
 - **"Retry" on a failed review** asks for confirmation again (AC-34), so it takes two clicks.
+- **With no lawyer chosen,** the button is disabled, with "Choose who you are first".
+- **"Retry" on a failed review** is the request button relabelled, so it also respects `canRequest` and the chosen lawyer.
+- **A rejected request** shows its reason only until the page is read again, which happens at once; then the page's own answer wins, so the reason may change.
+- **Another lawyer's new review** appears on an open page only after focus returns or the page reloads, because a page polls only while it knows of a running review (ADR-0007). AC-25 says every lawyer sees a run, so check this one.
+- **Times** ("started at", the reset date) use the workspace's time zone, read from `GET /quota`. If the plan cannot be read, the whole panel shows the load error.
+- **Texts the source documents do not give:** "Could not load the document.", "Could not refresh. Showing the last data.", "Could not send the request.", "Request a review?", "A new review is running. The result below is from an earlier review.", "Read-only — a newer version of this document exists."
 - **Simultaneous requests** (AC-15, AC-16) run in sequence in the tests, because `node:sqlite` is synchronous on one connection (ADR-0005).
 
 ## Out of scope
@@ -147,6 +153,7 @@ Tests carry AC ids: `.claude/bin/trace <feature>` lists what is not covered. Res
 
 ## Changes
 
+- 2026-11-04 — No criterion changed: the screen is built, and its open points are listed under "To check in manual testing".
 - 2026-11-04 — No criterion changed: "How to verify" now says screen tests run under Vitest with Testing Library (ADR 0017).
 - 2026-11-04 — Added "To check in manual testing": decisions the source documents did not settle.
 - 2026-11-04 — AC-10: `currentVersionId` follows the whole chain to the newest version. AC-11: a document unknown to the engine fails the review — POC conclusions 13 and 14.

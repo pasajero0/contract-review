@@ -5,7 +5,7 @@ const forbid = (name, from, to) => ({
   name,
   severity: 'error',
   // Tests may import test doubles from adapters/ and set up data directly.
-  from: { path: from, pathNot: '\\.test\\.ts$' },
+  from: { path: from, pathNot: '\\.test\\.tsx?$' },
   to: { path: to },
 });
 
@@ -34,7 +34,8 @@ module.exports = {
     {
       name: 'features-not-import-each-other',
       severity: 'error',
-      from: { path: `${WEB}/features/([^/]+)/` },
+      // Tests may mount several features together.
+      from: { path: `${WEB}/features/([^/]+)/`, pathNot: '\\.test\\.tsx?$' },
       to: { path: `${WEB}/features/`, pathNot: `${WEB}/features/$1/` },
     },
     forbid('app-layer', `${WEB}/app/`, `${WEB}/api/`),
