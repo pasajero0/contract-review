@@ -90,6 +90,7 @@ Tests carry AC ids: `.claude/bin/trace <feature>` lists what is not covered. Scr
 
 ## Changes
 
+- 2026-11-04 — No criterion changed: "How to verify" now says screen tests run under Vitest with Testing Library (ADR 0017).
 - 2026-11-04 — Added "To check in manual testing": decisions the source documents did not settle.
 - 2026-11-04 — No criterion changed: the backend is built, and tests carry AC ids.
 - 2026-11-04 — AC-13: the same page, marked "Read-only" — ADR 0015.

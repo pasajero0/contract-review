@@ -147,6 +147,7 @@ Tests carry AC ids: `.claude/bin/trace <feature>` lists what is not covered. Res
 
 ## Changes
 
+- 2026-11-04 — No criterion changed: "How to verify" now says screen tests run under Vitest with Testing Library (ADR 0017).
 - 2026-11-04 — Added "To check in manual testing": decisions the source documents did not settle.
 - 2026-11-04 — AC-10: `currentVersionId` follows the whole chain to the newest version. AC-11: a document unknown to the engine fails the review — POC conclusions 13 and 14.
 - 2026-11-04 — AC-31: the open point is settled, with no button on the same page — ADR 0015.
