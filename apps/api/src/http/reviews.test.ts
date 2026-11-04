@@ -1,4 +1,4 @@
-import { RequestReviewResponse, ReviewResponse } from '@lex-poc/contract';
+import { RequestReviewResponse, ReviewResponse } from '@lex-poc/contract/reviews';
 import type { FastifyInstance } from 'fastify';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { FixedRandom } from '../adapters/fixedRandom.ts';

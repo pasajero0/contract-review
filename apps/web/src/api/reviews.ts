@@ -1,4 +1,5 @@
-import type { ErrorBody, RequestReviewResponse } from '@lex-poc/contract';
+import type { ErrorBody } from '@lex-poc/contract/errors';
+import type { RequestReviewResponse } from '@lex-poc/contract/reviews';
 
 export type RequestReviewResult =
   | { ok: true; status: number; body: RequestReviewResponse }
