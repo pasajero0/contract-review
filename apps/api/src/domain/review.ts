@@ -26,6 +26,39 @@ export type ReviewView = {
   serverTime: number;
 };
 
+export type RunningReviewView = {
+  reviewId: string;
+  requestedBy: string;
+  requestedAt: number;
+  deadlineAt: number;
+  findingsCount: number;
+};
+
+export type FailedReviewView = {
+  reviewId: string;
+  requestedBy: string;
+  requestedAt: number;
+  failureReason: FailureReason;
+  findingsCount: number;
+};
+
+export type CanRequestView =
+  | { allowed: true; remaining: number }
+  | { allowed: false; reason: 'review_in_progress'; startedBy: string; startedAt: number }
+  | { allowed: false; reason: 'plan_exhausted'; limit: number; resetsAt: number }
+  | { allowed: false; reason: 'document_superseded'; currentVersionId: string };
+
+export type DocumentView = {
+  documentId: string;
+  title: string;
+  type: string;
+  pages: number;
+  current: RunningReviewView | null;
+  lastFailed: FailedReviewView | null;
+  canRequest: CanRequestView;
+  serverTime: number;
+};
+
 /**
  * What a reader sees: a running review past its deadline has already failed,
  * even before the sweeper persists it.

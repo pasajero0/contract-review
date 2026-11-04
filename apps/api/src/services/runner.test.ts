@@ -63,7 +63,7 @@ beforeEach(() => {
 });
 
 describe('runner with the fake engine', () => {
-  it('normal scenario completes with all findings', async () => {
+  it('request-review AC-3: normal scenario completes with all findings', async () => {
     const service = build([0.5, 0], [finding('a'), finding('b'), finding('c')]);
     const id = request(service);
 
@@ -74,7 +74,7 @@ describe('runner with the fake engine', () => {
     expect(logs).toEqual([]);
   });
 
-  it('shows progress while running', async () => {
+  it('request-review AC-4: shows progress while running', async () => {
     const service = build([0.5, 0], [finding('a'), finding('b'), finding('c')]);
     const id = request(service);
 
@@ -83,7 +83,7 @@ describe('runner with the fake engine', () => {
     expect(service.getReview(id)).toMatchObject({ status: 'running', findingsCount: 2 });
   });
 
-  it('"fail after 2nd finding" ends as failed / ai_error with 2 findings', async () => {
+  it('request-review AC-11: "fail after 2nd finding" ends as failed / ai_error with 2 findings', async () => {
     const service = build([0.1, 0.5, 0], [finding('a'), finding('b'), finding('c')]);
     const id = request(service);
 
@@ -93,7 +93,7 @@ describe('runner with the fake engine', () => {
     expect(storedTitles(id)).toEqual(['a', 'b']);
   });
 
-  it('a document with no findings completes with 0 findings', async () => {
+  it('request-review AC-6: a document with no findings completes with 0 findings', async () => {
     const service = build([0.5, 0], []);
     const id = request(service);
 
@@ -103,7 +103,7 @@ describe('runner with the fake engine', () => {
     expect(storedTitles(id)).toEqual([]);
   });
 
-  it('slow scenario: failed / timeout at 60 s, completion at 70 s is dropped and logged', async () => {
+  it('request-review AC-13: slow scenario with nothing sent: failed / timeout at 60 s, and the completion at 70 s is dropped', async () => {
     // Duration 1/6 of the 60 s range gives 70 s in total.
     const service = build([0.25, 1 / 6], []);
     const id = request(service);
@@ -119,7 +119,7 @@ describe('runner with the fake engine', () => {
     expect(logs).toEqual([expect.stringContaining('completion arrived 10s after deadline, dropped')]);
   });
 
-  it('slow scenario: a finding after the deadline is dropped and logged', async () => {
+  it('request-review AC-14: slow scenario: a finding after the deadline is dropped and logged', async () => {
     // 2 findings over 90 s: they arrive at 30 s and 60 s; 60 s is already too late.
     const service = build([0.25, 0.5], [finding('a'), finding('b')]);
     const id = request(service);
@@ -133,7 +133,7 @@ describe('runner with the fake engine', () => {
     ]);
   });
 
-  it('a late completion does not use the plan', async () => {
+  it('request-review AC-14: a late completion does not use the plan', async () => {
     const service = build([0.25, 1 / 6], []);
     const id = request(service);
 
@@ -153,7 +153,7 @@ describe('runner with the fake engine', () => {
     expect(storedTitles(id)).toEqual(['a']);
   });
 
-  it('a retry after a failure runs again as a new review', async () => {
+  it('request-review AC-5: a retry after a failure runs again as a new review', async () => {
     const service = build([0.1, 0, 0], [finding('a')]);
     const first = request(service);
     await clock.advance(5000);
@@ -171,7 +171,7 @@ describe('runner with the fake engine', () => {
 });
 
 describe('runner when the engine or the service breaks', () => {
-  it('an unknown severity fails the whole review as ai_error', async () => {
+  it('request-review AC-12: an unknown severity fails the whole review as ai_error', async () => {
     const logger = { warn: (message: string) => logs.push(message) };
     const deps = { db, clock, random: new FixedRandom(), config: DEFAULT_CONFIG, logger };
     const engine = {
@@ -193,7 +193,7 @@ describe('runner when the engine or the service breaks', () => {
     expect(logs.join(' ')).toContain('unknown severity');
   });
 
-  it('turns any engine error into failed / ai_error', async () => {
+  it('request-review AC-11: turns any engine error into failed / ai_error', async () => {
     const logger = { warn: (message: string) => logs.push(message) };
     const deps = { db, clock, random: new FixedRandom(), config: DEFAULT_CONFIG, logger };
     const engine = {
@@ -217,7 +217,7 @@ describe('runner when the engine or the service breaks', () => {
     const engine = createFakeEngine({
       clock,
       random: new FixedRandom([0.5, 0]),
-      findingsByDocument: new Map(),
+      findingsByDocument: new Map([['doc-1', []]]),
     });
     const broken: ReviewService = {
       requestReview: () => ({ ok: false, code: 'document_not_found' }),
@@ -230,6 +230,7 @@ describe('runner when the engine or the service breaks', () => {
       },
       expireOverdue: () => 0,
       getReview: () => null,
+      getDocument: () => null,
     };
 
     startRunner({ engine, logger }, broken, { reviewId: 'r1', documentId: 'doc-1' });
@@ -244,7 +245,7 @@ describe('runner when the engine or the service breaks', () => {
     const engine = createFakeEngine({
       clock,
       random: new FixedRandom([0.5, 0]),
-      findingsByDocument: new Map(),
+      findingsByDocument: new Map([['doc-1', []]]),
     });
     const failCalls: string[] = [];
     const partlyBroken: ReviewService = {
@@ -259,6 +260,7 @@ describe('runner when the engine or the service breaks', () => {
       },
       expireOverdue: () => 0,
       getReview: () => null,
+      getDocument: () => null,
     };
 
     startRunner({ engine, logger }, partlyBroken, { reviewId: 'r1', documentId: 'doc-1' });
@@ -294,7 +296,7 @@ describe('sweeper', () => {
 });
 
 describe('restart', () => {
-  it('a review running during a restart expires and frees the document', async () => {
+  it('request-review AC-20: a review running during a restart expires and frees the document', async () => {
     // Before the restart: a review is running; its AI task is lost with the process.
     const random = new FixedRandom();
     const before = createReviewService(

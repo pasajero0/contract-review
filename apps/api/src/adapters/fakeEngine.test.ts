@@ -59,7 +59,7 @@ describe('fake engine scenarios', () => {
     expect(seen.doneAt).not.toBeNull();
   });
 
-  it('failure: sends k findings, then fails', async () => {
+  it('request-review AC-11: failure: sends k findings, then fails', async () => {
     // Scenario 0.1 is failure; 0.5 of 4 possible values gives k = 2.
     const { clock, seen } = observe(options([0.1, 0.5, 0]));
 
@@ -97,7 +97,7 @@ describe('fake engine scenarios', () => {
     expect(longest.seen.doneAt).not.toBeNull();
   });
 
-  it('a document with no findings finishes with none', async () => {
+  it('request-review AC-6: a document with no findings finishes with none', async () => {
     const { clock, seen } = observe(options([0.5, 0], []));
 
     await clock.advance(5000);
@@ -106,13 +106,14 @@ describe('fake engine scenarios', () => {
     expect(seen.doneAt).toBe(5000);
   });
 
-  it('a document it does not know has no findings', async () => {
+  it('request-review AC-11: a document it does not know makes the engine throw, not finish empty', async () => {
     const { clock, seen } = observe(options([0.5, 0]), 'unknown');
 
-    await clock.advance(5000);
+    await clock.advance(30_000);
 
+    expect(seen.errorAt).not.toBeNull();
+    expect(seen.doneAt).toBeNull();
     expect(seen.findings).toEqual([]);
-    expect(seen.doneAt).toBe(5000);
   });
 });
 

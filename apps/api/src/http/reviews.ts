@@ -1,4 +1,5 @@
 import { ErrorBody } from '@lex-poc/contract/errors';
+import { DocumentResponse, getDocument } from '@lex-poc/contract/documents';
 import { getReview, RequestReviewResponse, requestReview, ReviewResponse } from '@lex-poc/contract/reviews';
 import type { FastifyInstance } from 'fastify';
 import type { RequestRejection, ReviewService } from '../services/reviewService.ts';
@@ -59,6 +60,21 @@ export function registerReviewRoutes(app: FastifyInstance, service: ReviewServic
 
       const body: ReviewResponse = review;
       return reply.send(ReviewResponse.parse(body));
+    },
+  });
+
+  app.route<{ Params: { id: string } }>({
+    method: getDocument.method,
+    url: getDocument.path,
+    handler: async (request, reply) => {
+      const document = service.getDocument(request.params.id);
+      if (!document) {
+        const body: ErrorBody = { code: 'document_not_found' };
+        return reply.code(404).send(body);
+      }
+
+      const body: DocumentResponse = document;
+      return reply.send(DocumentResponse.parse(body));
     },
   });
 }

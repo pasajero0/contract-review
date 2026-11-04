@@ -49,7 +49,7 @@ beforeEach(() => {
 });
 
 describe('one running review per document', () => {
-  it('rejects a second running review for the same document on the index', () => {
+  it('request-review AC-15: rejects a second running review for the same document on the index', () => {
     insertReview('r1');
 
     expect(() => insertReview('r2')).toThrow(/UNIQUE constraint failed: reviews\.document_id/);
@@ -73,7 +73,7 @@ describe('finished reviews are frozen', () => {
   it.each([
     ['completed', complete],
     ['failed', fail],
-  ])('rejects any update of a %s review', (_status, finish) => {
+  ])('request-review AC-21: rejects any update of a %s review', (_status, finish) => {
     insertReview('r1');
     finish('r1');
 
@@ -88,7 +88,7 @@ describe('finished reviews are frozen', () => {
   it.each([
     ['completed', complete],
     ['failed', fail],
-  ])('rejects a finding for a %s review', (_status, finish) => {
+  ])('request-review AC-21: rejects a finding for a %s review', (_status, finish) => {
     insertReview('r1');
     finish('r1');
 
@@ -107,7 +107,7 @@ describe('reviews are never deleted', () => {
     ['running', () => {}],
     ['completed', complete],
     ['failed', fail],
-  ])('rejects a delete of a %s review', (_status, finish) => {
+  ])('request-review AC-21: rejects a delete of a %s review', (_status, finish) => {
     insertReview('r1');
     finish('r1');
 
@@ -123,7 +123,7 @@ describe('facts of a review never change', () => {
     ['requested_by', `'lawyer-1'`],
     ['requested_at', '5'],
     ['deadline_at', '5'],
-  ])('rejects an update of %s while the review is running', (column, value) => {
+  ])('request-review AC-21: rejects an update of %s while the review is running', (column, value) => {
     insertReview('r1');
 
     expect(() =>
@@ -138,13 +138,13 @@ describe('findings are insert-only', () => {
     insertFinding('f1', 'r1');
   });
 
-  it('rejects an update of a finding', () => {
+  it('request-review AC-21: rejects an update of a finding', () => {
     expect(() => db.prepare(`UPDATE findings SET title = 'New' WHERE id = 'f1'`).run()).toThrow(
       /findings are insert-only/,
     );
   });
 
-  it('rejects a delete of a finding', () => {
+  it('request-review AC-21: rejects a delete of a finding', () => {
     expect(() => db.prepare(`DELETE FROM findings WHERE id = 'f1'`).run()).toThrow(
       /findings are insert-only/,
     );

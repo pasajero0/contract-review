@@ -8,7 +8,7 @@ stage: request-review
 
 A lawyer requests an AI review of a document, knowing what it costs, and follows it until it completes or fails. The API ends each review exactly once, under the plan and the 60-second rule.
 
-**Built in the POC:** the backend except AC-7 (`canRequest` and `GET /documents/:id`). In the frontend, only a button that sends the `POST` through the Next.js rewrite and shows the JSON answer, checked with a real click.
+**Built:** the backend. In the frontend, from the POC, only a button that sends the `POST` through the Next.js rewrite and shows the JSON answer, checked with a real click.
 
 ## Decisions
 
@@ -132,5 +132,6 @@ Tests do not carry AC ids yet, so `.claude/bin/trace` cannot link them. Restart 
 
 ## Changes
 
+- 2026-11-04 — AC-10: `currentVersionId` follows the whole chain to the newest version. AC-11: a document unknown to the engine fails the review — POC conclusions 13 and 14.
 - 2026-11-04 — AC-31: the open point is settled, with no button on the same page — ADR 0015.
 - 2026-11-04 — AC-35: also covers a response that fails validation — ADR 0016.

@@ -4,6 +4,8 @@ import { monthWindow } from '../domain/monthWindow.ts';
 import {
   effectiveOutcome,
   isSeverity,
+  type CanRequestView,
+  type DocumentView,
   type FailureReason,
   type IncomingFinding,
   type ReviewStatus,
@@ -39,6 +41,7 @@ export type ReviewService = {
   fail(reviewId: string, reason: FailureReason): boolean;
   expireOverdue(): number;
   getReview(reviewId: string): ReviewView | null;
+  getDocument(documentId: string): DocumentView | null;
 };
 
 type ReviewRow = {
@@ -85,36 +88,32 @@ export function createReviewService(
     return changes === 1;
   }
 
-  function requestInTransaction(documentId: string, lawyerId: string): RequestResult {
-    const now = clock.now();
-
-    db.prepare(EXPIRE_OVERDUE).run(now);
-
-    if (!db.prepare('SELECT 1 FROM documents WHERE id = ?').get(documentId)) {
-      return { ok: false, code: 'document_not_found' };
+  // The one set of checks, for the request and for the read. Writes nothing.
+  // An overdue running review blocks nothing and holds no plan slot.
+  function canRequestAt(documentId: string, now: number): CanRequestView {
+    let currentVersionId = documentId;
+    for (;;) {
+      const newer = db
+        .prepare('SELECT id FROM documents WHERE supersedes_id = ?')
+        .get(currentVersionId) as { id: string } | undefined;
+      if (!newer) break;
+      currentVersionId = newer.id;
     }
-    if (!db.prepare('SELECT 1 FROM lawyers WHERE id = ?').get(lawyerId)) {
-      return { ok: false, code: 'lawyer_not_found' };
-    }
-
-    const newer = db.prepare('SELECT id FROM documents WHERE supersedes_id = ?').get(documentId) as
-      | { id: string }
-      | undefined;
-    if (newer) {
-      return { ok: false, code: 'document_superseded', currentVersionId: newer.id };
+    if (currentVersionId !== documentId) {
+      return { allowed: false, reason: 'document_superseded', currentVersionId };
     }
 
     const running = db
       .prepare(
         `SELECT lawyers.name AS name, reviews.requested_at AS requested_at
          FROM reviews JOIN lawyers ON lawyers.id = reviews.requested_by
-         WHERE reviews.document_id = ? AND reviews.status = 'running'`,
+         WHERE reviews.document_id = ? AND reviews.status = 'running' AND reviews.deadline_at > ?`,
       )
-      .get(documentId) as { name: string; requested_at: number } | undefined;
+      .get(documentId, now) as { name: string; requested_at: number } | undefined;
     if (running) {
       return {
-        ok: false,
-        code: 'review_in_progress',
+        allowed: false,
+        reason: 'review_in_progress',
         startedBy: running.name,
         startedAt: running.requested_at,
       };
@@ -129,7 +128,33 @@ export function createReviewService(
       )
       .get(startMs, endMs, now) as { used: number };
     if (used >= config.planLimit) {
-      return { ok: false, code: 'plan_exhausted', resetsAt: endMs };
+      return { allowed: false, reason: 'plan_exhausted', limit: config.planLimit, resetsAt: endMs };
+    }
+    return { allowed: true, remaining: config.planLimit - used };
+  }
+
+  function requestInTransaction(documentId: string, lawyerId: string): RequestResult {
+    const now = clock.now();
+
+    db.prepare(EXPIRE_OVERDUE).run(now);
+
+    if (!db.prepare('SELECT 1 FROM documents WHERE id = ?').get(documentId)) {
+      return { ok: false, code: 'document_not_found' };
+    }
+    if (!db.prepare('SELECT 1 FROM lawyers WHERE id = ?').get(lawyerId)) {
+      return { ok: false, code: 'lawyer_not_found' };
+    }
+
+    const check = canRequestAt(documentId, now);
+    if (!check.allowed) {
+      switch (check.reason) {
+        case 'document_superseded':
+          return { ok: false, code: 'document_superseded', currentVersionId: check.currentVersionId };
+        case 'review_in_progress':
+          return { ok: false, code: 'review_in_progress', startedBy: check.startedBy, startedAt: check.startedAt };
+        case 'plan_exhausted':
+          return { ok: false, code: 'plan_exhausted', resetsAt: check.resetsAt };
+      }
     }
 
     const reviewId = random.uuid();
@@ -212,6 +237,57 @@ export function createReviewService(
         findingsCount: row.findings_count,
         requestedAt: row.requested_at,
         deadlineAt: row.deadline_at,
+        serverTime: now,
+      };
+    },
+
+    getDocument(documentId) {
+      const doc = db
+        .prepare('SELECT title, type, pages FROM documents WHERE id = ?')
+        .get(documentId) as { title: string; type: string; pages: number } | undefined;
+      if (!doc) return null;
+
+      const now = clock.now();
+      const latest = db
+        .prepare(
+          `SELECT reviews.id AS id, lawyers.name AS name, status, failure_reason, requested_at, deadline_at,
+                  (SELECT count(*) FROM findings WHERE review_id = reviews.id) AS findings_count
+           FROM reviews JOIN lawyers ON lawyers.id = reviews.requested_by
+           WHERE document_id = ? ORDER BY reviews.requested_at DESC, reviews.rowid DESC LIMIT 1`,
+        )
+        .get(documentId) as (ReviewRow & { id: string; name: string }) | undefined;
+
+      let current: DocumentView['current'] = null;
+      let lastFailed: DocumentView['lastFailed'] = null;
+      if (latest) {
+        const outcome = effectiveOutcome(latest.status, latest.failure_reason, latest.deadline_at, now);
+        if (outcome.status === 'running') {
+          current = {
+            reviewId: latest.id,
+            requestedBy: latest.name,
+            requestedAt: latest.requested_at,
+            deadlineAt: latest.deadline_at,
+            findingsCount: latest.findings_count,
+          };
+        } else if (outcome.status === 'failed' && outcome.failureReason) {
+          lastFailed = {
+            reviewId: latest.id,
+            requestedBy: latest.name,
+            requestedAt: latest.requested_at,
+            failureReason: outcome.failureReason,
+            findingsCount: latest.findings_count,
+          };
+        }
+      }
+
+      return {
+        documentId,
+        title: doc.title,
+        type: doc.type,
+        pages: doc.pages,
+        current,
+        lastFailed,
+        canRequest: canRequestAt(documentId, now),
         serverTime: now,
       };
     },

@@ -84,7 +84,7 @@ beforeEach(() => {
 });
 
 describe('requestReview', () => {
-  it('creates a running review with a deadline', () => {
+  it('request-review AC-1: creates a running review with a +60 s deadline', () => {
     const id = newId(service.requestReview('doc-1', 'lawyer-1'));
 
     expect(service.getReview(id)).toMatchObject({
@@ -97,7 +97,7 @@ describe('requestReview', () => {
     });
   });
 
-  it('starts the runner only after the transaction has committed', () => {
+  it('request-review AC-2: starts the runner only after the transaction has committed', () => {
     let visibleWhenStarted = false;
     const checking = createReviewService(
       {
@@ -131,7 +131,7 @@ describe('requestReview', () => {
     expect(started).toEqual([]);
   });
 
-  it('rejects a second request while one is running, saying who started it and when', () => {
+  it('request-review AC-8: rejects a second request while one is running, saying who started it and when', () => {
     service.requestReview('doc-1', 'lawyer-1');
 
     expect(service.requestReview('doc-1', 'lawyer-2')).toEqual({
@@ -142,7 +142,7 @@ describe('requestReview', () => {
     });
   });
 
-  it('rejects a document that does not exist', () => {
+  it('request-review AC-10: rejects a document that does not exist', () => {
     expect(service.requestReview('missing', 'lawyer-1')).toEqual({ ok: false, code: 'document_not_found' });
   });
 
@@ -150,7 +150,7 @@ describe('requestReview', () => {
     expect(service.requestReview('doc-1', 'missing')).toEqual({ ok: false, code: 'lawyer_not_found' });
   });
 
-  it('rejects a superseded document and names the current version', () => {
+  it('request-review AC-10: rejects a superseded document and names the current version', () => {
     addDocument('doc-1-v2', 'doc-1');
 
     expect(service.requestReview('doc-1', 'lawyer-1')).toEqual({
@@ -168,7 +168,7 @@ describe('requestReview', () => {
 });
 
 describe('plan', () => {
-  it('rejects the 11th request with 10 completed this month, with the reset date', () => {
+  it('request-review AC-9: rejects the 11th request with 10 completed this month, with the reset date', () => {
     for (let i = 0; i < 10; i += 1) addReview('completed', NOV_15 - 1000);
 
     expect(service.requestReview('doc-1', 'lawyer-1')).toEqual({
@@ -178,33 +178,33 @@ describe('plan', () => {
     });
   });
 
-  it('rejects with 9 completed and 1 running: the running one holds a slot', () => {
+  it('request-review AC-9: rejects with 9 completed and 1 running: the running one holds a slot', () => {
     for (let i = 0; i < 9; i += 1) addReview('completed', NOV_15 - 1000);
     addReview('running', NOV_15 - 1000);
 
     expect(service.requestReview('doc-1', 'lawyer-1')).toMatchObject({ ok: false, code: 'plan_exhausted' });
   });
 
-  it('does not count failed reviews', () => {
+  it('request-review AC-18: does not count failed reviews', () => {
     for (let i = 0; i < 10; i += 1) addReview('failed', NOV_15 - 1000);
 
     expect(service.requestReview('doc-1', 'lawyer-1')).toMatchObject({ ok: true });
   });
 
-  it('does not count a running review past its deadline', () => {
+  it('request-review AC-13: does not count a running review past its deadline, so its slot is free', () => {
     for (let i = 0; i < 9; i += 1) addReview('completed', NOV_15 - 1000);
     addReview('running', NOV_15 - TIMEOUT);
 
     expect(service.requestReview('doc-1', 'lawyer-1')).toMatchObject({ ok: true });
   });
 
-  it('does not count last month', () => {
+  it('request-review AC-19: does not count last month', () => {
     for (let i = 0; i < 10; i += 1) addReview('completed', OCT_15);
 
     expect(service.requestReview('doc-1', 'lawyer-1')).toMatchObject({ ok: true });
   });
 
-  it('uses the workspace time zone for the month boundary', () => {
+  it('request-review AC-19: uses the workspace time zone for the month boundary', () => {
     // 31 Oct 23:30 UTC is already November in Rome (00:30) and in Sofia (01:30).
     // 31 Oct 22:30 UTC is October in Rome (23:30) but November in Sofia (00:30).
     for (let i = 0; i < 10; i += 1) addReview('completed', Date.UTC(2026, 9, 31, 22, 30));
@@ -228,7 +228,7 @@ describe('plan', () => {
     expect(build('Europe/Rome').requestReview('doc-1', 'lawyer-1')).toMatchObject({ ok: true });
   });
 
-  it('counts a review by request time, not by finish time', async () => {
+  it('request-review AC-19: counts a review by request time, not by finish time', async () => {
     // Requested at 23:59:30 on 31 October in Rome, finished in November: it counts for October.
     const lateClock = new ManualClock(Date.UTC(2026, 9, 31, 22, 59, 30));
     const lateService = createReviewService(
@@ -243,7 +243,7 @@ describe('plan', () => {
     expect(service.requestReview('doc-2', 'lawyer-1')).toMatchObject({ ok: true });
   });
 
-  it('gives the last slot to exactly one of two documents requested together', () => {
+  it('request-review AC-16: of two requests for the last slot, made in sequence, exactly one is accepted', () => {
     for (let i = 0; i < 9; i += 1) addReview('completed', NOV_15 - 1000);
 
     const results = [
@@ -267,7 +267,7 @@ describe('late events', () => {
     expect(db.prepare('SELECT seq FROM findings ORDER BY seq').all()).toEqual([{ seq: 1 }, { seq: 2 }]);
   });
 
-  it('drops and logs a finding after the deadline', async () => {
+  it('request-review AC-14: drops and logs a finding after the deadline', async () => {
     const id = newId(service.requestReview('doc-1', 'lawyer-1'));
     await clock.advance(TIMEOUT + 4000);
 
@@ -277,7 +277,7 @@ describe('late events', () => {
     expect(logs).toEqual([expect.stringContaining('finding arrived 4s after deadline, dropped')]);
   });
 
-  it('drops and logs a finding with an unknown severity', () => {
+  it('request-review AC-12: drops and logs a finding with an unknown severity', () => {
     const id = newId(service.requestReview('doc-1', 'lawyer-1'));
 
     expect(service.recordFinding(id, { ...FINDING, severity: 'critical' })).toBe(false);
@@ -286,7 +286,7 @@ describe('late events', () => {
     expect(logs).toEqual([expect.stringContaining('unknown severity')]);
   });
 
-  it('completes before the deadline', () => {
+  it('request-review AC-3: completes before the deadline', () => {
     const id = newId(service.requestReview('doc-1', 'lawyer-1'));
 
     expect(service.complete(id)).toBe(true);
@@ -294,7 +294,7 @@ describe('late events', () => {
     expect(row(id)).toEqual({ status: 'completed', failure_reason: null, finished_at: NOV_15 });
   });
 
-  it('drops a completion after the deadline, does not complete and does not use the plan', async () => {
+  it('request-review AC-14: drops a completion after the deadline, does not complete and does not use the plan', async () => {
     for (let i = 0; i < 9; i += 1) addReview('completed', NOV_15 - 1000);
     const id = newId(service.requestReview('doc-1', 'lawyer-1'));
     await clock.advance(TIMEOUT + 4000);
@@ -306,14 +306,14 @@ describe('late events', () => {
     expect(service.requestReview('doc-2', 'lawyer-1')).toMatchObject({ ok: true });
   });
 
-  it('drops a completion exactly at the deadline', async () => {
+  it('request-review AC-14: drops a completion exactly at the deadline', async () => {
     const id = newId(service.requestReview('doc-1', 'lawyer-1'));
     await clock.advance(TIMEOUT);
 
     expect(service.complete(id)).toBe(false);
   });
 
-  it('drops a failure after the deadline', async () => {
+  it('request-review AC-14: drops a failure after the deadline', async () => {
     const id = newId(service.requestReview('doc-1', 'lawyer-1'));
     await clock.advance(TIMEOUT + 1);
 
@@ -322,7 +322,7 @@ describe('late events', () => {
     expect(row(id).failure_reason).toBeNull();
   });
 
-  it('drops a failure exactly at the deadline', async () => {
+  it('request-review AC-14: drops a failure exactly at the deadline', async () => {
     const id = newId(service.requestReview('doc-1', 'lawyer-1'));
     await clock.advance(TIMEOUT);
 
@@ -331,7 +331,7 @@ describe('late events', () => {
     expect(row(id).failure_reason).toBeNull();
   });
 
-  it('drops events for a review that has already finished', () => {
+  it('request-review AC-14: drops events for a review that has already finished', () => {
     const id = newId(service.requestReview('doc-1', 'lawyer-1'));
     service.fail(id, 'ai_error');
 
@@ -350,7 +350,7 @@ describe('late events', () => {
 });
 
 describe('expiry', () => {
-  it('persists an overdue review as failed at its deadline', async () => {
+  it('request-review AC-13: persists an overdue review as failed / timeout with finished_at = deadline', async () => {
     const id = newId(service.requestReview('doc-1', 'lawyer-1'));
     await clock.advance(TIMEOUT + 5000);
 
@@ -366,7 +366,7 @@ describe('expiry', () => {
     expect(service.expireOverdue()).toBe(0);
   });
 
-  it('shows an overdue review as failed on read, before anything persists it', async () => {
+  it('request-review AC-13: shows an overdue review as failed on read, before anything persists it', async () => {
     const id = newId(service.requestReview('doc-1', 'lawyer-1'));
     await clock.advance(TIMEOUT);
 
@@ -374,7 +374,7 @@ describe('expiry', () => {
     expect(row(id).status).toBe('running');
   });
 
-  it('does not let an overdue running review block a new request', async () => {
+  it('request-review AC-17: does not let an overdue running review block a new request', async () => {
     const first = newId(service.requestReview('doc-1', 'lawyer-1'));
     await clock.advance(TIMEOUT);
 
@@ -384,7 +384,7 @@ describe('expiry', () => {
     expect(row(second).status).toBe('running');
   });
 
-  it('creates a new review on retry; the old one stays failed', () => {
+  it('request-review AC-5: creates a new review on retry; the old one stays failed', () => {
     const first = newId(service.requestReview('doc-1', 'lawyer-1'));
     service.fail(first, 'ai_error');
 
@@ -397,5 +397,303 @@ describe('expiry', () => {
 
   it('returns nothing for an unknown review', () => {
     expect(service.getReview('missing')).toBeNull();
+  });
+});
+
+/** Adds a past review on a given document; unlike addReview, the document is not new. */
+function addReviewOn(
+  documentId: string,
+  status: 'completed' | 'failed' | 'running',
+  requestedAt: number,
+  lawyerId = 'lawyer-1',
+): string {
+  pastReviews += 1;
+  const id = `on-${pastReviews}`;
+  db.prepare(
+    `INSERT INTO reviews (id, document_id, requested_by, requested_at, deadline_at, status, failure_reason, finished_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).run(
+    id,
+    documentId,
+    lawyerId,
+    requestedAt,
+    requestedAt + TIMEOUT,
+    status,
+    status === 'failed' ? 'ai_error' : null,
+    status === 'running' ? null : requestedAt + 1,
+  );
+  return id;
+}
+
+const RESETS_AT = Date.UTC(2026, 10, 30, 23);
+
+describe('getDocument', () => {
+  it('request-review AC-7: a document with no reviews can be requested, with the full plan left', () => {
+    expect(service.getDocument('doc-1')).toMatchObject({
+      documentId: 'doc-1',
+      title: 'doc-1',
+      type: 'nda',
+      pages: 1,
+      current: null,
+      lastFailed: null,
+      canRequest: { allowed: true, remaining: 10 },
+      serverTime: NOV_15,
+    });
+  });
+
+  it('request-review AC-7: serverTime follows the clock', async () => {
+    await clock.advance(2500);
+
+    expect(service.getDocument('doc-1')?.serverTime).toBe(NOV_15 + 2500);
+  });
+
+  it('request-review AC-7: remaining counts completed and non-overdue running reviews this month only', () => {
+    for (let i = 0; i < 3; i += 1) addReview('completed', NOV_15 - 1000);
+    addReview('running', NOV_15 - 1000);
+    addReview('running', NOV_15 - TIMEOUT); // overdue: holds no slot
+    addReview('failed', NOV_15 - 1000);
+    for (let i = 0; i < 2; i += 1) addReview('completed', OCT_15);
+
+    expect(service.getDocument('doc-1')?.canRequest).toEqual({ allowed: true, remaining: 6 });
+  });
+
+  it('request-review AC-7: remaining is 1 on the last slot', () => {
+    for (let i = 0; i < 9; i += 1) addReview('completed', NOV_15 - 1000);
+
+    expect(service.getDocument('doc-1')?.canRequest).toEqual({ allowed: true, remaining: 1 });
+  });
+
+  it('request-review AC-7: a running review shows who, when and the count, never finding content', async () => {
+    const id = newId(service.requestReview('doc-1', 'lawyer-2'));
+    service.recordFinding(id, { ...FINDING, title: 'Distinctive-Title-9921', explanation: 'Distinctive-Why-5530' });
+    service.recordFinding(id, FINDING);
+    await clock.advance(5000);
+
+    const view = service.getDocument('doc-1');
+
+    expect(view?.current).toEqual({
+      reviewId: id,
+      requestedBy: 'Sofia Greco',
+      requestedAt: NOV_15,
+      deadlineAt: NOV_15 + TIMEOUT,
+      findingsCount: 2,
+    });
+    expect(view?.lastFailed).toBeNull();
+    expect(view?.canRequest).toEqual({
+      allowed: false,
+      reason: 'review_in_progress',
+      startedBy: 'Sofia Greco',
+      startedAt: NOV_15,
+    });
+    expect(JSON.stringify(view)).not.toContain('Distinctive-Title-9921');
+    expect(JSON.stringify(view)).not.toContain('Distinctive-Why-5530');
+  });
+
+  it('request-review AC-7: with 9 completed and 1 running elsewhere the plan is exhausted', () => {
+    for (let i = 0; i < 9; i += 1) addReview('completed', NOV_15 - 1000);
+    addReview('running', NOV_15 - 1000);
+
+    expect(service.getDocument('doc-1')?.canRequest).toEqual({
+      allowed: false,
+      reason: 'plan_exhausted',
+      limit: 10,
+      resetsAt: RESETS_AT,
+    });
+  });
+
+  it('request-review AC-7: with 10 used the plan is exhausted', () => {
+    for (let i = 0; i < 10; i += 1) addReview('completed', NOV_15 - 1000);
+
+    expect(service.getDocument('doc-1')?.canRequest).toEqual({
+      allowed: false,
+      reason: 'plan_exhausted',
+      limit: 10,
+      resetsAt: RESETS_AT,
+    });
+  });
+
+  it('request-review AC-7: a superseded document says so, ahead of any other reason', () => {
+    for (let i = 0; i < 10; i += 1) addReview('completed', NOV_15 - 1000);
+    addReviewOn('doc-1', 'running', NOV_15 - 1000);
+    addDocument('doc-1-v2', 'doc-1');
+
+    expect(service.getDocument('doc-1')?.canRequest).toEqual({
+      allowed: false,
+      reason: 'document_superseded',
+      currentVersionId: 'doc-1-v2',
+    });
+  });
+
+  it('request-review AC-7: a failed review shows its reason and findings, and does not use the plan', () => {
+    const id = newId(service.requestReview('doc-1', 'lawyer-1'));
+    service.recordFinding(id, FINDING);
+    service.recordFinding(id, FINDING);
+    service.fail(id, 'ai_error');
+
+    const view = service.getDocument('doc-1');
+
+    expect(view?.current).toBeNull();
+    expect(view?.lastFailed).toEqual({
+      reviewId: id,
+      requestedBy: 'Riccardo Fanti',
+      requestedAt: NOV_15,
+      failureReason: 'ai_error',
+      findingsCount: 2,
+    });
+    expect(view?.canRequest).toEqual({ allowed: true, remaining: 10 });
+  });
+
+  it('request-review AC-13: an overdue running review reads as failed / timeout, and reading writes nothing', async () => {
+    const id = newId(service.requestReview('doc-1', 'lawyer-1'));
+    service.recordFinding(id, FINDING);
+    await clock.advance(TIMEOUT);
+
+    const view = service.getDocument('doc-1');
+
+    expect(view?.current).toBeNull();
+    expect(view?.lastFailed).toMatchObject({ reviewId: id, failureReason: 'timeout', findingsCount: 1 });
+    expect(view?.canRequest).toEqual({ allowed: true, remaining: 10 });
+    expect(row(id)).toEqual({ status: 'running', failure_reason: null, finished_at: null });
+  });
+
+  it('request-review AC-7: an older failure followed by a completed review shows no failure', async () => {
+    const first = newId(service.requestReview('doc-1', 'lawyer-1'));
+    service.fail(first, 'ai_error');
+    await clock.advance(1000);
+    const second = newId(service.requestReview('doc-1', 'lawyer-1'));
+    service.complete(second);
+
+    const view = service.getDocument('doc-1');
+
+    expect(view?.lastFailed).toBeNull();
+    expect(view?.current).toBeNull();
+    expect(view?.canRequest).toEqual({ allowed: true, remaining: 9 });
+  });
+
+  it('request-review AC-7: an unknown document gives nothing', () => {
+    expect(service.getDocument('missing')).toBeNull();
+  });
+
+  it('request-review AC-7: reading changes no row', () => {
+    addReviewOn('doc-1', 'running', NOV_15 - TIMEOUT);
+    const snapshot = () => JSON.stringify(db.prepare('SELECT * FROM reviews ORDER BY id').all());
+    const before = snapshot();
+
+    service.getDocument('doc-1');
+
+    expect(snapshot()).toBe(before);
+  });
+});
+
+describe('canRequest agrees with a real request', () => {
+  const cases: Array<[string, () => void, string, boolean]> = [
+    ['no reviews', () => {}, 'doc-1', true],
+    ['the last slot', () => { for (let i = 0; i < 9; i += 1) addReview('completed', NOV_15 - 1000); }, 'doc-1', true],
+    ['a running review on the document', () => { addReviewOn('doc-1', 'running', NOV_15 - 1000); }, 'doc-1', false],
+    ['a running review on another document', () => { addReviewOn('doc-2', 'running', NOV_15 - 1000); }, 'doc-1', true],
+    ['10 completed', () => { for (let i = 0; i < 10; i += 1) addReview('completed', NOV_15 - 1000); }, 'doc-1', false],
+    [
+      '9 completed and 1 running elsewhere',
+      () => {
+        for (let i = 0; i < 9; i += 1) addReview('completed', NOV_15 - 1000);
+        addReview('running', NOV_15 - 1000);
+      },
+      'doc-1',
+      false,
+    ],
+    ['10 completed last month', () => { for (let i = 0; i < 10; i += 1) addReview('completed', OCT_15); }, 'doc-1', true],
+    ['a superseded document', () => { addDocument('doc-1-v2', 'doc-1'); }, 'doc-1', false],
+    [
+      'a superseded document with a used-up plan',
+      () => {
+        for (let i = 0; i < 10; i += 1) addReview('completed', NOV_15 - 1000);
+        addDocument('doc-1-v2', 'doc-1');
+      },
+      'doc-1',
+      false,
+    ],
+    ['10 failed reviews', () => { for (let i = 0; i < 10; i += 1) addReview('failed', NOV_15 - 1000); }, 'doc-1', true],
+    ['a failed latest review', () => { addReviewOn('doc-1', 'failed', NOV_15 - 1000); }, 'doc-1', true],
+    ['an overdue running review', () => { addReviewOn('doc-1', 'running', NOV_15 - TIMEOUT); }, 'doc-1', true],
+    [
+      'an overdue running review and 9 completed',
+      () => {
+        for (let i = 0; i < 9; i += 1) addReview('completed', NOV_15 - 1000);
+        addReviewOn('doc-1', 'running', NOV_15 - TIMEOUT);
+      },
+      'doc-1',
+      true,
+    ],
+    [
+      'an old failure then a completed review',
+      () => {
+        addReviewOn('doc-1', 'failed', NOV_15 - 5000);
+        addReviewOn('doc-1', 'completed', NOV_15 - 1000);
+      },
+      'doc-1',
+      true,
+    ],
+    [
+      'a chain v1, v2, v3: the oldest',
+      () => { addDocument('v1'); addDocument('v2', 'v1'); addDocument('v3', 'v2'); },
+      'v1',
+      false,
+    ],
+    [
+      'a chain v1, v2, v3: the middle',
+      () => { addDocument('v1'); addDocument('v2', 'v1'); addDocument('v3', 'v2'); },
+      'v2',
+      false,
+    ],
+    [
+      'a chain v1, v2, v3: the newest',
+      () => { addDocument('v1'); addDocument('v2', 'v1'); addDocument('v3', 'v2'); },
+      'v3',
+      true,
+    ],
+  ];
+
+  it.each(cases)('request-review AC-7: %s', (_name, setUp, documentId, expected) => {
+    setUp();
+
+    const view = service.getDocument(documentId);
+    const result = service.requestReview(documentId, 'lawyer-1');
+
+    expect(view?.canRequest.allowed).toBe(expected);
+    expect(result.ok).toBe(expected);
+    if (!result.ok && view && !view.canRequest.allowed) {
+      expect(view.canRequest.reason).toBe(result.code);
+    }
+  });
+});
+
+describe('superseded chain', () => {
+  beforeEach(() => {
+    addDocument('v1');
+    addDocument('v2', 'v1');
+    addDocument('v3', 'v2');
+  });
+
+  it('request-review AC-10: a request on v1 names v3, the end of the chain', () => {
+    expect(service.requestReview('v1', 'lawyer-1')).toEqual({
+      ok: false,
+      code: 'document_superseded',
+      currentVersionId: 'v3',
+    });
+  });
+
+  it('request-review AC-10: a request on v2 names v3', () => {
+    expect(service.requestReview('v2', 'lawyer-1')).toEqual({
+      ok: false,
+      code: 'document_superseded',
+      currentVersionId: 'v3',
+    });
+  });
+
+  it('request-review AC-10: canRequest on v1 and v2 names v3 too', () => {
+    const expected = { allowed: false, reason: 'document_superseded', currentVersionId: 'v3' };
+
+    expect(service.getDocument('v1')?.canRequest).toEqual(expected);
+    expect(service.getDocument('v2')?.canRequest).toEqual(expected);
   });
 });

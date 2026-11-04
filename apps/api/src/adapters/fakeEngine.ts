@@ -22,7 +22,8 @@ export function createFakeEngine({ clock, random, findingsByDocument }: FakeEngi
 
   return {
     async *run(documentId) {
-      const findings = findingsByDocument.get(documentId) ?? [];
+      const findings = findingsByDocument.get(documentId);
+      if (!findings) throw new Error(`fake engine has no findings for document ${documentId}`);
 
       const scenario = random.next();
       const fails = scenario < FAILS_BELOW;
