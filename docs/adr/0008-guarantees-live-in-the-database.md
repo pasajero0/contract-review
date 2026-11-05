@@ -1,6 +1,6 @@
 # 0008. Guarantees live in the database; one row per review
 
-- **Status:** Proposed
+- **Status:** Proposed. Narrowed by [0022](0022-two-rules-live-in-the-service-sql.md): two rules live in the service's SQL.
 - **Date:** 2026-11-04
 - **Applies to:** [request-review](../specs/request-review/SPEC.md)
 

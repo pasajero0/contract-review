@@ -23,7 +23,8 @@ CREATE TABLE IF NOT EXISTS reviews (
   requested_by   TEXT NOT NULL REFERENCES lawyers (id),
   requested_at   INTEGER NOT NULL,
   deadline_at    INTEGER NOT NULL,
-  -- Outcome: written once, only from 'running'.
+  -- Outcome: a trigger freezes a finished review. Inserting one as finished and finishing
+  -- after the deadline are prevented by the service's conditional SQL (ADR 0022).
   status         TEXT NOT NULL DEFAULT 'running',
   failure_reason TEXT,
   finished_at    INTEGER,

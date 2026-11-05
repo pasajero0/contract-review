@@ -30,6 +30,7 @@ A lawyer requests an AI review of a document, knowing what it costs, and follows
 | [0019](../../adr/0019-what-the-plan-numbers-mean.md) | 2026-11-04 | A running review holds a slot, and used counts only completed |
 | [0020](../../adr/0020-unknown-document-fails-the-review.md) | 2026-11-04 | A document unknown to the engine fails the review |
 | [0021](../../adr/0021-previous-review-stays-readable-in-full.md) | 2026-11-04 | During a run or after a failure, the last completed review stays readable in full, labelled "Previous review" |
+| [0022](../../adr/0022-two-rules-live-in-the-service-sql.md) | 2026-11-05 | Inserting a review as finished and finishing after the deadline are prevented by the service's SQL |
 
 ## Terms
 
@@ -157,6 +158,7 @@ Tests carry AC ids: `.claude/bin/trace <feature>` lists what is not covered. Res
 
 ## Changes
 
+- 2026-11-05 — No criterion changed: the Decisions table adds ADR 0022, which says what the database does not enforce.
 - 2026-11-05 — AC-35: "Retry" after a failed request asks for confirmation again, because repeating it is safe only while the first review is running. Added AC-36 (a sweep error does not stop the API), AC-37 (a server error is logged and keeps the contract's shape) and AC-38 (a rejected malformed request keeps it too).
 - 2026-11-04 — AC-25: the ban covers the running review's own findings. AC-26: the earlier review shows in full — ADR 0021.
 - 2026-11-04 — No criterion changed: the screen is built, and its open points are listed under "To check in manual testing".
