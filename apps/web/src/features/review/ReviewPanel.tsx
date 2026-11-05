@@ -113,11 +113,14 @@ export function ReviewPanel({ documentId }: { documentId: string }) {
   const failed = doc.current === null ? doc.lastFailed : null;
   const resultLabel = doc.current ? 'Previous review' : failed ? 'Earlier result' : 'Review result';
 
+  const requestErrorShown = request.isError && canRequest.allowed && lawyerChosen;
+
   const controls = (
     <RequestControls
       canRequest={canRequest}
       lawyerChosen={lawyerChosen}
       label={failed ? 'Retry' : 'Request review'}
+      hideButton={requestErrorShown}
       pending={request.isPending}
       timeZone={quota.timeZone}
       confirmOpen={confirmOpen}
@@ -146,7 +149,7 @@ export function ReviewPanel({ documentId }: { documentId: string }) {
       ) : (
         controls
       )}
-      {request.isError && canRequest.allowed && lawyerChosen && (
+      {requestErrorShown && (
         <ErrorAlert onRetry={() => setConfirmOpen(true)}>Could not send the request.</ErrorAlert>
       )}
 

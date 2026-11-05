@@ -18,6 +18,8 @@ type Props = {
   canRequest: CanRequest;
   lawyerChosen: boolean;
   label: 'Request review' | 'Retry';
+  /** Hides only the button, e.g. while the request error's own Retry is on screen. */
+  hideButton: boolean;
   pending: boolean;
   timeZone: string;
   confirmOpen: boolean;
@@ -26,16 +28,18 @@ type Props = {
 };
 
 /** The request button, its confirmation, and the reason when a review cannot be requested. */
-export function RequestControls({ canRequest, lawyerChosen, label, pending, timeZone, confirmOpen, onConfirmOpenChange, onConfirm }: Props) {
+export function RequestControls({ canRequest, lawyerChosen, label, hideButton, pending, timeZone, confirmOpen, onConfirmOpenChange, onConfirm }: Props) {
   if (!canRequest.allowed && canRequest.reason === 'document_superseded') {
     return <p>{reasonText(canRequest, timeZone)}</p>;
   }
 
   return (
     <div className="space-y-2">
-      <Button disabled={!lawyerChosen || !canRequest.allowed || pending} onClick={() => onConfirmOpenChange(true)}>
-        {label}
-      </Button>
+      {!hideButton && (
+        <Button disabled={!lawyerChosen || !canRequest.allowed || pending} onClick={() => onConfirmOpenChange(true)}>
+          {label}
+        </Button>
+      )}
       {!lawyerChosen && <p>Choose who you are first</p>}
       {!canRequest.allowed && <p>{reasonText(canRequest, timeZone)}</p>}
 

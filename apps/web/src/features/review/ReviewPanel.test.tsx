@@ -558,6 +558,68 @@ describe('ReviewPanel', () => {
     expect(screen.queryByText(/did not complete/i)).toBeNull();
   });
 
+  it('request-review AC-35: after a POST with no answer there is "Retry" and no "Request review", also after cancelling the confirmation', async () => {
+    const user = userEvent.setup();
+    stubDocument(okReply(allowed(6)), { [POST]: [networkError()] });
+    renderPanel();
+
+    await screen.findByRole('button', { name: /request review/i });
+    await user.click(requestButton());
+    await user.click(await screen.findByRole('button', { name: 'Confirm' }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('Could not send the request.');
+    expect(within(alert).getByRole('button', { name: 'Retry' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /request review/i })).toBeNull();
+
+    await user.click(screen.getByRole('button', { name: 'Retry' }));
+    await screen.findByText(/this uses 1 of your 6 remaining reviews/i);
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.queryByRole('button', { name: /request review/i })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy();
+  });
+
+  it('request-review AC-35: on a page with a failed review, a POST with no answer leaves exactly one "Retry", and it opens the confirmation', async () => {
+    const user = userEvent.setup();
+    const stub = stubDocument(okReply(documentBody({ lastFailed: failedReview() })), { [POST]: [networkError()] });
+    renderPanel();
+
+    await user.click(await screen.findByRole('button', { name: 'Retry' }));
+    await user.click(await screen.findByRole('button', { name: 'Confirm' }));
+    await screen.findByText('Could not send the request.');
+    expect(stub.count(POST_PATH, 'POST')).toBe(1);
+
+    const retries = screen.getAllByRole('button', { name: 'Retry' });
+    expect(retries).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: /request review/i })).toBeNull();
+
+    await user.click(retries[0]!);
+    await screen.findByText(/this uses 1 of your 6 remaining reviews/i);
+  });
+
+  it('request-review AC-35: when the repeated request succeeds, the request error goes away', async () => {
+    const user = userEvent.setup();
+    const stub = stubDocument(okReply(allowed(6)), {
+      [POST]: [networkError(), rawReply(201, { reviewId: 'r-new' })],
+    });
+    renderPanel();
+
+    await screen.findByRole('button', { name: /request review/i });
+    await user.click(requestButton());
+    await user.click(await screen.findByRole('button', { name: 'Confirm' }));
+    await screen.findByText('Could not send the request.');
+
+    await user.click(screen.getByRole('button', { name: 'Retry' }));
+    await user.click(await screen.findByRole('button', { name: 'Confirm' }));
+
+    await vi.waitFor(() => expect(stub.count(POST_PATH, 'POST')).toBe(2));
+    await vi.waitFor(() => expect(screen.queryByText('Could not send the request.')).toBeNull());
+    expect(screen.queryByRole('alert')).toBeNull();
+    expect(screen.getByRole('button', { name: /request review/i })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull();
+  });
+
   it('request-review AC-35: a refresh that fails during a run keeps the progress line, shows an error, and does not show the review as failed', async () => {
     vi.useFakeTimers(FAKE);
     const running = (findingsCount: number) =>
