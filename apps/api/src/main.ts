@@ -32,7 +32,7 @@ const service: ReviewService = createReviewService(
   { db, clock, random, config, logger },
   { onStarted: (review) => startRunner({ engine, logger }, service, review) },
 );
-startSweeper({ clock, config }, service);
+startSweeper({ clock, config, logger }, service);
 
 const app = buildApp();
 registerReviewRoutes(app, service);

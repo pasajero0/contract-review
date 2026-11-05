@@ -107,7 +107,7 @@ describe('runner with the fake engine', () => {
     // Duration 1/6 of the 60 s range gives 70 s in total.
     const service = build([0.25, 1 / 6], []);
     const id = request(service);
-    const stop = startSweeper({ clock, config: DEFAULT_CONFIG }, service);
+    const stop = startSweeper({ clock, config: DEFAULT_CONFIG, logger: { warn: () => {} } }, service);
 
     await clock.advance(60_000);
     expect(reviewRow(id)).toEqual({ status: 'failed', failure_reason: 'timeout', finished_at: NOW + 60_000 });
@@ -289,7 +289,7 @@ describe('sweeper', () => {
       },
     };
 
-    const stop = startSweeper({ clock, config: DEFAULT_CONFIG }, counting);
+    const stop = startSweeper({ clock, config: DEFAULT_CONFIG, logger: { warn: () => {} } }, counting);
     expect(calls).toBe(1);
 
     await clock.advance(10_000);
@@ -298,6 +298,43 @@ describe('sweeper', () => {
     stop();
     await clock.advance(10_000);
     expect(calls).toBe(3);
+  });
+
+  it('request-review AC-36: logs a sweep error, does not throw, and runs the next sweep on schedule', async () => {
+    const service = build([0.5, 0], []);
+    let calls = 0;
+    const flaky: ReviewService = {
+      ...service,
+      expireOverdue: () => {
+        calls += 1;
+        // The immediate first tick and the first scheduled tick fail; later ticks work.
+        if (calls <= 2) throw new Error(`sweep broke on call ${calls}`);
+        return 0;
+      },
+    };
+    const logger = { warn: (message: string) => logs.push(message) };
+
+    let stop: () => void = () => {};
+    expect(() => {
+      stop = startSweeper({ clock, config: DEFAULT_CONFIG, logger }, flaky);
+    }).not.toThrow();
+    expect(calls).toBe(1);
+    expect(logs).toEqual([expect.stringContaining('sweep broke on call 1')]);
+
+    await expect(clock.advance(DEFAULT_CONFIG.sweepIntervalMs)).resolves.toBeUndefined();
+    expect(calls).toBe(2);
+    expect(logs).toEqual([
+      expect.stringContaining('sweep broke on call 1'),
+      expect.stringContaining('sweep broke on call 2'),
+    ]);
+
+    await clock.advance(DEFAULT_CONFIG.sweepIntervalMs * 2);
+    expect(calls).toBe(4);
+    expect(logs).toHaveLength(2);
+
+    stop();
+    await clock.advance(DEFAULT_CONFIG.sweepIntervalMs * 2);
+    expect(calls).toBe(4);
   });
 });
 
@@ -317,7 +354,7 @@ describe('restart', () => {
       { db, clock, random, config: DEFAULT_CONFIG, logger: { warn: () => {} } },
       { onStarted: () => {} },
     );
-    const stop = startSweeper({ clock, config: DEFAULT_CONFIG }, after);
+    const stop = startSweeper({ clock, config: DEFAULT_CONFIG, logger: { warn: () => {} } }, after);
 
     expect(after.getReview(id)).toMatchObject({ status: 'running' });
     await clock.advance(40_000);
