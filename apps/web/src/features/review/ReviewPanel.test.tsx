@@ -269,7 +269,7 @@ describe('ReviewPanel', () => {
     expect(screen.queryByText(/new review is running/i)).toBeNull();
   });
 
-  it('request-review AC-27: when the review completes, polling stops, the previous-review block goes, and list and quota are refreshed', async () => {
+  it('request-review AC-27: when the review completes, fast polling ends and the page reads every 10 s, the previous-review block goes, and list and quota are refreshed', async () => {
     vi.useFakeTimers(FAKE);
     const running = documentBody({
       current: runningReview(),
@@ -300,9 +300,73 @@ describe('ReviewPanel', () => {
     expect(stub.count(LIST)).toBeGreaterThan(listBefore);
     expect(stub.count(QUOTA)).toBeGreaterThan(quotaBefore);
 
+    // The fast polling has ended: nothing for the next 9 s, then one read at the 10 s mark.
     const docCalls = stub.count(DOC);
-    await advance(60_000);
+    await advance(9_000);
     expect(stub.count(DOC)).toBe(docCalls);
+    await advance(1_000);
+    expect(stub.count(DOC)).toBe(docCalls + 1);
+  });
+
+  it('request-review AC-39: with no review running, the page reads the document every 10 s', async () => {
+    vi.useFakeTimers(FAKE);
+    const stub = stubDocument(okReply(allowed(6)));
+
+    renderPanel();
+    await advance(0);
+    expect(stub.count(DOC)).toBe(1);
+
+    await advance(9_900);
+    expect(stub.count(DOC)).toBe(1);
+    await advance(100);
+    expect(stub.count(DOC)).toBe(2);
+    await advance(10_000);
+    expect(stub.count(DOC)).toBe(3);
+  });
+
+  it("request-review AC-39: another lawyer's run shows up within 10 s, then polling speeds up", async () => {
+    vi.useFakeTimers(FAKE);
+    const stub = stubDocument([
+      okReply(allowed(6)),
+      okReply(documentBody({ current: runningReview(), canRequest: BUSY })),
+    ]);
+
+    renderPanel();
+    await advance(0);
+    expect(screen.queryByText(/in progress/i)).toBeNull();
+
+    await advance(9_900);
+    expect(stub.count(DOC)).toBe(1);
+    await advanceAndRender(100);
+    screen.getByText(/in progress · requested by Tina Trainee/i);
+    expect(stub.count(DOC)).toBe(2);
+
+    await advance(1500);
+    expect(stub.count(DOC)).toBe(3);
+    await advance(1500);
+    expect(stub.count(DOC)).toBe(4);
+  });
+
+  it('request-review AC-39: when a run appears or ends on its own, the plan is read again', async () => {
+    vi.useFakeTimers(FAKE);
+    const stub = stubDocument([
+      okReply(allowed(6)),
+      okReply(documentBody({ current: runningReview(), canRequest: BUSY })),
+      okReply(documentBody({ current: null, latestCompleted: completedReview() })),
+    ]);
+
+    renderPanel();
+    await advance(0);
+    const quotaIdle = stub.count(QUOTA);
+
+    await advanceAndRender(10_000);
+    screen.getByText(/in progress · requested by Tina Trainee/i);
+    const quotaRunning = stub.count(QUOTA);
+    expect(quotaRunning).toBeGreaterThan(quotaIdle);
+
+    await advanceAndRender(1500);
+    expect(screen.queryByText(/in progress · requested by/i)).toBeNull();
+    expect(stub.count(QUOTA)).toBeGreaterThan(quotaRunning);
   });
 
   it('request-review AC-28: disables the button and names who started the running review, at the quota time zone', async () => {

@@ -154,8 +154,7 @@ We chose 36 core cases: the lawyer's path and the brief's rules. An AI agent dro
 
 **Found in manual testing and not fixed:**
 
-- An open confirmation does not refresh: it can show a stale number of remaining reviews. The server still rejects the request, and the screen shows why.
-- A page with no review it knows of does not poll. Another lawyer's new review appears when the tab becomes visible again or the page reloads, and until then the page's plan numbers can be old.
+- An open confirmation can show a number of remaining reviews up to 10 seconds old. The server still rejects the request, and the screen shows why.
 - The chosen lawyer is not synchronised between tabs. A tab can show one lawyer while its request is recorded under the one chosen in another tab.
 - A chosen lawyer who no longer exists gives a generic "Could not send the request." with a "Retry" that cannot help.
 - An unknown document's address offers a "Retry" that cannot help.

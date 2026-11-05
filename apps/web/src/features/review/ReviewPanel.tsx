@@ -18,6 +18,7 @@ import { ReviewResult } from './ReviewResult';
 import { failureText, progressLine, reasonFromError, type Disallowed } from './reviewText';
 
 const POLL_MS = 1500;
+const IDLE_POLL_MS = 10_000;
 
 type Rejection = { reason: Disallowed; atServerTime: number };
 
@@ -46,7 +47,7 @@ export function ReviewPanel({ documentId }: { documentId: string }) {
   const docQuery = useQuery({
     queryKey: queryKeys.document(documentId),
     queryFn: () => apiGet(getDocument.path.replace(':id', id), DocumentResponse),
-    refetchInterval: (q) => (q.state.data?.current ? POLL_MS : false),
+    refetchInterval: (q) => (q.state.data === undefined ? false : q.state.data.current ? POLL_MS : IDLE_POLL_MS),
   });
   const quotaQuery = useQuery({
     queryKey: queryKeys.quota,
@@ -61,11 +62,12 @@ export function ReviewPanel({ documentId }: { documentId: string }) {
     void queryClient.invalidateQueries({ queryKey: queryKeys.quota });
   };
 
-  // When a run ends, the list and the plan line change too. The document was just read.
-  const wasRunning = useRef(false);
-  const isRunning = doc !== undefined && doc.current !== null;
+  // When a run starts or ends, the list and the plan line change too. The first render is not a change.
+  const wasRunning = useRef<boolean | null>(null);
+  const isRunning = doc === undefined ? null : doc.current !== null;
   useEffect(() => {
-    if (wasRunning.current && !isRunning) {
+    if (isRunning === null) return;
+    if (wasRunning.current !== null && wasRunning.current !== isRunning) {
       void queryClient.invalidateQueries({ queryKey: queryKeys.documents });
       void queryClient.invalidateQueries({ queryKey: queryKeys.quota });
     }
