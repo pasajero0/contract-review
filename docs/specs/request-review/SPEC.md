@@ -14,24 +14,24 @@ A lawyer requests an AI review of a document, knowing what it costs, and follows
 
 | ADR | Recorded | What it means here |
 |---|---|---|
-| [0001](../../adr/0001-previous-review-stays-visible.md) | 2026-11-04 | The previous review stays on screen, labelled, during a run |
-| [0002](../../adr/0002-findings-only-after-completion.md) | 2026-11-04 | A running review shows a count, never content |
-| [0003](../../adr/0003-no-queue-beyond-plan.md) | 2026-11-04 | Beyond the plan the request is rejected; a confirmation states the cost |
-| [0004](../../adr/0004-superseded-versions-are-read-only.md) | 2026-11-04 | A superseded version cannot be reviewed |
-| [0005](../../adr/0005-typescript-end-to-end.md) | 2026-11-04 | `node:sqlite` cannot show real concurrency problems |
-| [0006](../../adr/0006-modular-monolith-no-job-queue.md) | 2026-11-04 | The runner and sweeper live in one process; a restart ends in `timeout` |
-| [0007](../../adr/0007-polling-for-progress.md) | 2026-11-04 | The screen polls every 1–2 s during a run |
-| [0008](../../adr/0008-guarantees-live-in-the-database.md) | 2026-11-04 | The index, triggers and conditional updates enforce the rules |
-| [0009](../../adr/0009-utc-storage-workspace-time-zone.md) | 2026-11-04 | The month is computed in the workspace time zone |
-| [0011](../../adr/0011-plan-counts-by-request-time.md) | 2026-11-04 | A review counts in the month of its request, and a running one holds a slot |
-| [0012](../../adr/0012-unknown-severity-fails-review.md) | 2026-11-04 | An unknown severity fails the review |
-| [0015](../../adr/0015-superseded-version-uses-the-same-page.md) | 2026-11-04 | A superseded version has no request button |
-| [0016](../../adr/0016-web-validates-api-responses.md) | 2026-11-04 | A response is validated before the screen uses it |
-| [0019](../../adr/0019-what-the-plan-numbers-mean.md) | 2026-11-04 | A running review holds a slot, and used counts only completed |
-| [0020](../../adr/0020-unknown-document-fails-the-review.md) | 2026-11-04 | A document unknown to the engine fails the review |
-| [0021](../../adr/0021-previous-review-stays-readable-in-full.md) | 2026-11-04 | During a run or after a failure, the last completed review stays readable in full, labelled "Previous review" |
-| [0022](../../adr/0022-two-rules-live-in-the-service-sql.md) | 2026-11-05 | Inserting a review as finished and finishing after the deadline are prevented by the service's SQL |
-| [0023](../../adr/0023-document-page-always-polls.md) | 2026-11-05 | The document page polls every 10 s with no review running |
+| [0001](../../adr/archive/0001-previous-review-stays-visible.md) | 2026-11-04 | The previous review stays on screen, labelled, during a run |
+| [0002](../../adr/archive/0002-findings-only-after-completion.md) | 2026-11-04 | A running review shows a count, never content |
+| [0003](../../adr/archive/0003-no-queue-beyond-plan.md) | 2026-11-04 | Beyond the plan the request is rejected; a confirmation states the cost |
+| [0004](../../adr/archive/0004-superseded-versions-are-read-only.md) | 2026-11-04 | A superseded version cannot be reviewed |
+| [0005](../../adr/archive/0005-typescript-end-to-end.md) | 2026-11-04 | `node:sqlite` cannot show real concurrency problems |
+| [0006](../../adr/archive/0006-modular-monolith-no-job-queue.md) | 2026-11-04 | The runner and sweeper live in one process; a restart ends in `timeout` |
+| [0007](../../adr/archive/0007-polling-for-progress.md) | 2026-11-04 | The screen polls every 1–2 s during a run |
+| [0008](../../adr/archive/0008-guarantees-live-in-the-database.md) | 2026-11-04 | The index, triggers and conditional updates enforce the rules |
+| [0009](../../adr/archive/0009-utc-storage-workspace-time-zone.md) | 2026-11-04 | The month is computed in the workspace time zone |
+| [0011](../../adr/archive/0011-plan-counts-by-request-time.md) | 2026-11-04 | A review counts in the month of its request, and a running one holds a slot |
+| [0012](../../adr/archive/0012-unknown-severity-fails-review.md) | 2026-11-04 | An unknown severity fails the review |
+| [0015](../../adr/archive/0015-superseded-version-uses-the-same-page.md) | 2026-11-04 | A superseded version has no request button |
+| [0016](../../adr/archive/0016-web-validates-api-responses.md) | 2026-11-04 | A response is validated before the screen uses it |
+| [0019](../../adr/archive/0019-what-the-plan-numbers-mean.md) | 2026-11-04 | A running review holds a slot, and used counts only completed |
+| [0020](../../adr/archive/0020-unknown-document-fails-the-review.md) | 2026-11-04 | A document unknown to the engine fails the review |
+| [0021](../../adr/archive/0021-previous-review-stays-readable-in-full.md) | 2026-11-04 | During a run or after a failure, the last completed review stays readable in full, labelled "Previous review" |
+| [0022](../../adr/archive/0022-two-rules-live-in-the-service-sql.md) | 2026-11-05 | Inserting a review as finished and finishing after the deadline are prevented by the service's SQL |
+| [0023](../../adr/archive/0023-document-page-always-polls.md) | 2026-11-05 | The document page polls every 10 s with no review running |
 
 ## Terms
 

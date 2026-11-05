@@ -1,6 +1,6 @@
 # 0020. A document unknown to the AI engine fails the review
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-04
 - **Applies to:** [request-review](../specs/request-review/SPEC.md)
 

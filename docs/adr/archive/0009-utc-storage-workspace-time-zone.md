@@ -1,6 +1,6 @@
 # 0009. Store time as UTC epoch ms; compute months in the workspace time zone
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-04
 - **Applies to:** [request-review](../specs/request-review/SPEC.md)
 

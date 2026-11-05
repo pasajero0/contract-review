@@ -1,6 +1,6 @@
 # 0012. An unknown severity fails the whole review
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-04
 - **Applies to:** [request-review](../specs/request-review/SPEC.md)
 

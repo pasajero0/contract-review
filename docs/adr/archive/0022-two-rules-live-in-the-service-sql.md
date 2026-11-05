@@ -1,6 +1,6 @@
 # 0022. Two review rules live in the service's SQL
 
-- **Status:** Accepted. Decided by the human on 2026-11-05. Supersedes the claim in [0008](0008-guarantees-live-in-the-database.md) that the database enforces every part of "written once, only from `running`".
+- **Status:** Accepted (narrows 0008)
 - **Date:** 2026-11-05
 - **Applies to:** [request-review](../specs/request-review/SPEC.md)
 

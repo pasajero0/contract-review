@@ -1,6 +1,6 @@
 # POC plan
 
-> Throwaway spike before the real solution. Archive: kept as it was run. Ids such as A18, M15 or UC3 come from the former `decisions.md` and `use-cases.md`; `docs/adr/README.md` maps them to their new place. §1 says "no README": one was added after the POC, at the human's request. Working rules: `CLAUDE.md`.
+> Throwaway spike before the real solution. Archive: kept as it was run. Ids such as A18, M15 or UC3 come from the former `decisions.md` and `use-cases.md`; `docs/adr/archive/README.md` maps them to their new place. §1 says "no README": one was added after the POC, at the human's request. Working rules: `CLAUDE.md`.
 
 **Status (2026-11-04):** Stages 1–7 are done, except that the session export itself was not made: its format and the personal data in it are known (§7, Q8). See `.claude/tmp/poc-diary.md` for details. Open questions are in §8.
 

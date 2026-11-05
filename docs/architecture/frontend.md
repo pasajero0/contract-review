@@ -1,6 +1,6 @@
 # Frontend architecture
 
-How `apps/web` is organised. See also: [overview](overview.md), [0007](../adr/0007-polling-for-progress.md), [0013](../adr/0013-tooling-choices.md).
+How `apps/web` is organised. See also: [overview](overview.md), [0007](../adr/archive/0007-polling-for-progress.md), [0013](../adr/archive/0013-tooling-choices.md).
 
 ## Layers
 
@@ -26,7 +26,7 @@ packages/contract
 ## Rules
 
 - **No business rules here:** whether a review can be requested, the order of findings and the remaining plan come from the API.
-- **Every response is validated:** in `api/`, a response starts as `unknown` and is parsed with its schema from `packages/contract` ([0016](../adr/0016-web-validates-api-responses.md)).
+- **Every response is validated:** in `api/`, a response starts as `unknown` and is parsed with its schema from `packages/contract` ([0016](../adr/archive/0016-web-validates-api-responses.md)).
 - The API is reached through a Next.js rewrite: `/api/*` goes to `http://127.0.0.1:3001/*`. One origin, no CORS.
 - Components are generated into `apps/web/src/ui/`. We write no styles of our own; Tailwind only for page layout.
 

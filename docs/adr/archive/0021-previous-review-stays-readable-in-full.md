@@ -1,6 +1,6 @@
 # 0021. The previous review stays readable in full
 
-- **Status:** Proposed. Makes [0001](0001-previous-review-stays-visible.md) precise; decided by the human on 2026-11-04.
+- **Status:** Accepted (makes 0001 precise)
 - **Date:** 2026-11-04
 - **Applies to:** [request-review](../specs/request-review/SPEC.md), [read-result](../specs/read-result/SPEC.md)
 

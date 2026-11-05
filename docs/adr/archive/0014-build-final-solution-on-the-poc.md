@@ -1,6 +1,6 @@
 # 0014. Build the final solution on the POC
 
-- **Status:** Proposed. Replaces A5 of the former `decisions.md`: "its findings, not its code, go into the real solution".
+- **Status:** Accepted (replaces A5 of the former decisions.md)
 - **Date:** 2026-11-04
 - **Applies to:** All features (project-wide decision)
 

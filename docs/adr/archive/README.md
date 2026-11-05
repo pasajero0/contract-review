@@ -1,5 +1,7 @@
 # Architecture decision records
 
+Archived ADRs with their final status; the text is as written, links may point to the old layout. Summary: [../decisions.md](../decisions.md)
+
 A dated ledger of why a decision was made. An ADR is not edited: a new decision replaces an old one with a new entry, marked `Supersedes`. A status becomes `Accepted` when a human merges it.
 
 Each ADR lists its features under "Applies to". Each spec lists its ADRs in a Decisions table, and a criterion that follows from one cites it, for example `ADR-0003`.

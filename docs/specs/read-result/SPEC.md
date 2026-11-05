@@ -14,11 +14,11 @@ A lawyer reads the result of a completed review: the clauses the AI flagged, eac
 
 | ADR | Recorded | What it means here |
 |---|---|---|
-| [0002](../../adr/0002-findings-only-after-completion.md) | 2026-11-04 | Content is shown only for a `completed` review |
-| [0004](../../adr/0004-superseded-versions-are-read-only.md) | 2026-11-04 | Reviews of a replaced version stay readable, with a banner |
-| [0015](../../adr/0015-superseded-version-uses-the-same-page.md) | 2026-11-04 | A replaced version uses the same page, marked "Read-only" |
-| [0016](../../adr/0016-web-validates-api-responses.md) | 2026-11-04 | A response is validated before findings are shown |
-| [0021](../../adr/0021-previous-review-stays-readable-in-full.md) | 2026-11-04 | During a run or after a failure, the last completed review stays readable in full, labelled "Previous review" |
+| [0002](../../adr/archive/0002-findings-only-after-completion.md) | 2026-11-04 | Content is shown only for a `completed` review |
+| [0004](../../adr/archive/0004-superseded-versions-are-read-only.md) | 2026-11-04 | Reviews of a replaced version stay readable, with a banner |
+| [0015](../../adr/archive/0015-superseded-version-uses-the-same-page.md) | 2026-11-04 | A replaced version uses the same page, marked "Read-only" |
+| [0016](../../adr/archive/0016-web-validates-api-responses.md) | 2026-11-04 | A response is validated before findings are shown |
+| [0021](../../adr/archive/0021-previous-review-stays-readable-in-full.md) | 2026-11-04 | During a run or after a failure, the last completed review stays readable in full, labelled "Previous review" |
 
 ## Terms
 

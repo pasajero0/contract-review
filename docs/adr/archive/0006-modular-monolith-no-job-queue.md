@@ -1,6 +1,6 @@
 # 0006. One process, with no job queue
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-04
 - **Applies to:** [request-review](../specs/request-review/SPEC.md)
 

@@ -1,6 +1,6 @@
 # 0007. Poll for progress while a review runs
 
-- **Status:** Proposed. For the document page, replaced in part by [0023](0023-document-page-always-polls.md): it polls every 10 seconds with no review running.
+- **Status:** Accepted (replaced in part by 0023, for the document page)
 - **Date:** 2026-11-04
 - **Applies to:** [request-review](../specs/request-review/SPEC.md)
 

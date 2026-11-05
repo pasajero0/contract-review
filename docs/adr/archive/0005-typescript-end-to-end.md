@@ -1,6 +1,6 @@
 # 0005. TypeScript end to end, with SQLite
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-04
 - **Applies to:** All features (project-wide decision)
 

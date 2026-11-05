@@ -1,6 +1,6 @@
 # 0016. The web app validates every API response with Zod
 
-- **Status:** Proposed. Settles the open point in [0010](0010-shared-contract-package.md).
+- **Status:** Accepted (settles the open point in 0010)
 - **Date:** 2026-11-04
 - **Applies to:** All features (project-wide decision)
 

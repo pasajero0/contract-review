@@ -1,6 +1,6 @@
 # Backend architecture
 
-How `apps/api` is organised. See also: [overview](overview.md), [0006](../adr/0006-modular-monolith-no-job-queue.md), [0008](../adr/0008-guarantees-live-in-the-database.md).
+How `apps/api` is organised. See also: [overview](overview.md), [0006](../adr/archive/0006-modular-monolith-no-job-queue.md), [0008](../adr/archive/0008-guarantees-live-in-the-database.md).
 
 ## Event flow
 

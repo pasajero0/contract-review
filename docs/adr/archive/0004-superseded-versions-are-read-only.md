@@ -1,6 +1,6 @@
 # 0004. Superseded contract versions are read-only
 
-- **Status:** Proposed. The open point below is settled by [0015](0015-superseded-version-uses-the-same-page.md)
+- **Status:** Accepted (open point settled by 0015)
 - **Date:** 2026-11-04
 - **Applies to:** [documents-list](../specs/documents-list/SPEC.md), [request-review](../specs/request-review/SPEC.md), [read-result](../specs/read-result/SPEC.md)
 

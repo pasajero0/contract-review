@@ -1,4 +1,4 @@
--- All timestamps are integer epoch milliseconds, UTC (docs/adr/0009).
+-- All timestamps are integer epoch milliseconds, UTC (docs/adr/archive/0009-utc-storage-workspace-time-zone.md).
 
 CREATE TABLE IF NOT EXISTS lawyers (
   id    TEXT PRIMARY KEY,

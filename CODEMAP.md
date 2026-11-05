@@ -19,7 +19,7 @@ All documents live in `docs/`. Only `README.md`, `CLAUDE.md` and this file sit i
 | Path | What |
 |---|---|
 | [docs/architecture/](docs/architecture/overview.md) | How the code is organised: [overview](docs/architecture/overview.md), [backend](docs/architecture/backend.md), [frontend](docs/architecture/frontend.md) |
-| [docs/adr/](docs/adr/README.md) | Why: one file per decision, plus a map of old ids |
+| [docs/adr/decisions.md](docs/adr/decisions.md) | Why: the decisions in one file. Originals and a map of old ids: [docs/adr/archive/](docs/adr/archive/README.md) |
 | [docs/poc/](docs/poc/conclusions.md) | POC archive: [plan and results](docs/poc/plan.md), [conclusions](docs/poc/conclusions.md) |
 | [README.md](README.md) | Run, test, the three decisions, limitations, AI tools, time |
 | [CLAUDE.md](CLAUDE.md) | Working rules, including where each document goes |

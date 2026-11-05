@@ -1,6 +1,6 @@
 # 0010. Shared contract package with Zod
 
-- **Status:** Proposed. The open point below is settled by [0016](0016-web-validates-api-responses.md)
+- **Status:** Accepted (open point settled by 0016)
 - **Date:** 2026-11-04
 - **Applies to:** All features (project-wide decision)
 

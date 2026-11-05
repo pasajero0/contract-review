@@ -14,13 +14,13 @@ A lawyer picks who they are and sees every document in the workspace, with the s
 
 | ADR | Recorded | What it means here |
 |---|---|---|
-| [0003](../../adr/0003-no-queue-beyond-plan.md) | 2026-11-04 | The plan's usage is always visible |
-| [0004](../../adr/0004-superseded-versions-are-read-only.md) | 2026-11-04 | A replaced version is listed under the current one |
-| [0011](../../adr/0011-plan-counts-by-request-time.md) | 2026-11-04 | `GET /quota` counts by the month of the request |
-| [0015](../../adr/0015-superseded-version-uses-the-same-page.md) | 2026-11-04 | A replaced version is marked "Read-only" in the list |
-| [0016](../../adr/0016-web-validates-api-responses.md) | 2026-11-04 | A response is validated before the list shows it |
-| [0018](../../adr/0018-reads-need-no-lawyer-identity.md) | 2026-11-04 | Reads work before a lawyer is chosen |
-| [0019](../../adr/0019-what-the-plan-numbers-mean.md) | 2026-11-04 | What used, running and remaining mean |
+| [0003](../../adr/archive/0003-no-queue-beyond-plan.md) | 2026-11-04 | The plan's usage is always visible |
+| [0004](../../adr/archive/0004-superseded-versions-are-read-only.md) | 2026-11-04 | A replaced version is listed under the current one |
+| [0011](../../adr/archive/0011-plan-counts-by-request-time.md) | 2026-11-04 | `GET /quota` counts by the month of the request |
+| [0015](../../adr/archive/0015-superseded-version-uses-the-same-page.md) | 2026-11-04 | A replaced version is marked "Read-only" in the list |
+| [0016](../../adr/archive/0016-web-validates-api-responses.md) | 2026-11-04 | A response is validated before the list shows it |
+| [0018](../../adr/archive/0018-reads-need-no-lawyer-identity.md) | 2026-11-04 | Reads work before a lawyer is chosen |
+| [0019](../../adr/archive/0019-what-the-plan-numbers-mean.md) | 2026-11-04 | What used, running and remaining mean |
 
 ## Terms
 

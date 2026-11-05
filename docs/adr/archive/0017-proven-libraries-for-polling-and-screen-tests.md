@@ -1,6 +1,6 @@
 # 0017. Proven libraries for polling and screen tests
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-04
 - **Applies to:** All features (project-wide decision)
 

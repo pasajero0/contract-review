@@ -121,13 +121,13 @@ The partner's requirements are about trust in a legal result, so they win over c
 
 | Point | Decision | Why | ADR |
 |---|---|---|---|
-| Previous review while a new one runs | Shown in full, as a separate block labelled "Previous review", under a banner that a new review is running | Nobody waits in front of nothing, and the label keeps an old result from reading as the new one. Both sides get what they asked for | [0001](docs/adr/0001-previous-review-stays-visible.md), [0021](docs/adr/0021-previous-review-stays-readable-in-full.md) |
-| Findings before the review finishes | Progress only: a count and the seconds elapsed. We refuse the product manager's request | A review can still fail, and a partial list can read as final. After a failure the screen says "There is no result." | [0002](docs/adr/0002-findings-only-after-completion.md) |
-| Requests beyond the plan | Rejected, with no queue and the reset date on screen. We refuse the product manager's request. A confirmation states the cost before each request | Nobody should believe a review is on its way when it will not start for weeks, or spend one of the ten without knowing | [0003](docs/adr/0003-no-queue-beyond-plan.md) |
+| Previous review while a new one runs | Shown in full, as a separate block labelled "Previous review", under a banner that a new review is running | Nobody waits in front of nothing, and the label keeps an old result from reading as the new one. Both sides get what they asked for | [0001](docs/adr/archive/0001-previous-review-stays-visible.md), [0021](docs/adr/archive/0021-previous-review-stays-readable-in-full.md) |
+| Findings before the review finishes | Progress only: a count and the seconds elapsed. We refuse the product manager's request | A review can still fail, and a partial list can read as final. After a failure the screen says "There is no result." | [0002](docs/adr/archive/0002-findings-only-after-completion.md) |
+| Requests beyond the plan | Rejected, with no queue and the reset date on screen. We refuse the product manager's request. A confirmation states the cost before each request | Nobody should believe a review is on its way when it will not start for weeks, or spend one of the ten without knowing | [0003](docs/adr/archive/0003-no-queue-beyond-plan.md) |
 
 ## Assumptions
 
-Where the brief is silent, we chose as follows. Reasons are in the [ADRs](docs/adr/README.md).
+Where the brief is silent, we chose as follows. Reasons are in [the decisions](docs/adr/decisions.md).
 
 - A review counts in the month it was requested, in the workspace's time zone (Europe/Rome), even if it finishes in the next month.
 - A running review holds a plan slot, so 9 completed + 1 running rejects a new request. "Used" in the header counts only completed reviews.
@@ -140,7 +140,7 @@ Where the brief is silent, we chose as follows. Reasons are in the [ADRs](docs/a
 
 ## Refused
 
-Roles and permissions by job title; a queue beyond the plan; a `queued` status; findings before completion; a DI container; a job queue and a separate worker; WebSocket; the server time zone for the month boundary; event sourcing; a client generated from OpenAPI; our own styles; Docker; authentication, file upload and a real model. Reasons are in the [ADRs](docs/adr/README.md).
+Roles and permissions by job title; a queue beyond the plan; a `queued` status; findings before completion; a DI container; a job queue and a separate worker; WebSocket; the server time zone for the month boundary; event sourcing; a client generated from OpenAPI; our own styles; Docker; authentication, file upload and a real model. Reasons are in [the decisions](docs/adr/decisions.md).
 
 ## Manual verification
 
@@ -169,6 +169,7 @@ We chose 36 core cases: the lawyer's path and the brief's rules. An AI agent dro
 - Concurrency tests cannot show real interleaving: `node:sqlite` is synchronous on one connection.
 - The runner and the sweeper live in the API's process. A restart loses a running review's AI work, and the review ends in `timeout` at its deadline.
 - The first start needs internet access for the font.
+- The archived decision records in `docs/adr/archive/` keep their text as written, with only their final status added, so their links to other folders no longer resolve.
 
 ## Documentation
 

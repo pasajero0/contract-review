@@ -1,6 +1,6 @@
 # 0015. A superseded version uses the same page, with no request button
 
-- **Status:** Proposed. Settles the open point in [0004](0004-superseded-versions-are-read-only.md).
+- **Status:** Accepted (settles the open point in 0004)
 - **Date:** 2026-11-04
 - **Applies to:** [documents-list](../specs/documents-list/SPEC.md), [request-review](../specs/request-review/SPEC.md), [read-result](../specs/read-result/SPEC.md)
 

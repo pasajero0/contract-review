@@ -1,6 +1,6 @@
 # 0023. The document page polls every 10 seconds with no review running
 
-- **Status:** Accepted. Decided by the human on 2026-11-05. Supersedes "only while a review is running" in [0007](0007-polling-for-progress.md), for the document page.
+- **Status:** Accepted (replaces 0007 in part, for the document page)
 - **Date:** 2026-11-05
 - **Applies to:** [request-review](../specs/request-review/SPEC.md)
 

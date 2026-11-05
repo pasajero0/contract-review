@@ -1,6 +1,6 @@
 # 0013. Tooling: Next.js defaults, exact versions, shadcn/ui
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-04
 - **Applies to:** All features (project-wide decision)
 

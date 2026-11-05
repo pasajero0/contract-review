@@ -1,6 +1,6 @@
 # 0019. What the plan numbers mean
 
-- **Status:** Proposed. To confirm in manual testing. Adds to [0011](0011-plan-counts-by-request-time.md).
+- **Status:** Accepted (adds to 0011)
 - **Date:** 2026-11-04
 - **Applies to:** [documents-list](../specs/documents-list/SPEC.md), [request-review](../specs/request-review/SPEC.md)
 

@@ -1,6 +1,6 @@
 # 0003. Reject requests beyond the plan, with no queue
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-11-04
 - **Applies to:** [request-review](../specs/request-review/SPEC.md), [documents-list](../specs/documents-list/SPEC.md)
 

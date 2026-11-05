@@ -4,7 +4,7 @@ Read these first, in this order:
 1. `CODEMAP.md` — where everything lives.
 2. "Stages" below — what is left to build.
 3. `docs/specs/` — how each feature behaves, backend and frontend.
-4. `docs/adr/` — why: architecture, domain rules, product decisions.
+4. `docs/adr/decisions.md` — why: architecture, domain rules, product decisions. Originals: `docs/adr/archive/`.
 5. `docs/architecture/` — how the code is organised.
 
 The POC is finished (tag `poc-end`, archive in `docs/poc/`). We build the final solution on it (ADR 0014).
@@ -33,7 +33,7 @@ If time runs short, cut screen tests first. Never cut the brief's rules, the thr
 - Work **one stage at a time** from "Stages" above. Feature stages use a branch `f-<feature>`.
 - **Keep reports short:** a TLDR in bullets, "Done: ..." then "Questions: ...". The human asks to expand anything unclear.
 - At the end of each stage, the report also names the commands run with their result, and **"Decisions not in plan"**: anything decided that the docs do not cover.
-- Commits: one stage = one commit, with generated shadcn components in their own commit (`docs/adr/0013-tooling-choices.md`). The agent may commit a finished stage. Never push.
+- Commits: one stage = one commit, with generated shadcn components in their own commit (`docs/adr/archive/0013-tooling-choices.md`). The agent may commit a finished stage. Never push.
 - Commit description: bullets saying what was done and, where useful, why.
 - Diary: `.claude/tmp/poc-diary.md`, written during each stage: what was done, difficulties and mistakes, decisions not in the plan, what may not work.
 - **Tests first, through subagents.** `test-writer` writes failing tests from the spec's criteria, named `<feature> AC-n: …`. `implementer` then writes the code. The main session plans and reviews.
@@ -48,7 +48,7 @@ If time runs short, cut screen tests first. Never cut the brief's rules, the thr
 
 All documents live in `docs/`; only `README.md`, `CLAUDE.md` and `CODEMAP.md` sit in the root. Each fact lives in one place. What the code already says is not repeated in docs.
 
-- **ADR (`docs/adr/`):** why a decision was made. A dated ledger, not edited: a new decision replaces an old one with a new entry, marked `Supersedes`. It lists its features under "Applies to".
+- **Decisions (`docs/adr/decisions.md`):** why a decision was made, in one file, edited in place. **`docs/adr/archive/`:** the original records with their final status; the text is not edited, and specs cite them by number.
 - **Spec (`docs/specs/<feature>/SPEC.md`):** one feature, edited in place; the code changes after the spec. One file: purpose, Decisions table (ADR, date, what it means here), Backend, Frontend. A status code goes under Backend, a text on screen under Frontend. A criterion that follows from a decision cites it (`ADR-0003`). Folders are named after the feature, not numbered: a number reads like a version. Do not split a spec into several files: `spec-gate` and `trace` read only `SPEC.md`.
 - **Only for real behaviour.** No spec for mechanical work such as the scaffold: its facts live in the code and configs. A 29-criterion scaffold spec and its review were written and thrown away; the plan's 4 done criteria were enough.
 - **Contract (`packages/contract`):** the only place for API shapes. Once a shape is built, a spec only names it.
