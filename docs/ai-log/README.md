@@ -1,6 +1,6 @@
 # AI session log
 
-Translated by AI from Russian; model reasoning, long outputs and personal details removed. The POC session and its time records are not included. The hand-in cleanup (history, documents, this log) is not included.
+Translated by AI from Russian; model reasoning, long outputs, the company's name, the surname and the POC's time records (the POC — setting up my agent harness, checking the risky parts and the first decisions — is counted separately; see Time spent) removed. Not included: the POC session, the discussion of the final code review (the review itself is, as subagent `ac683760`), the Claude in Chrome runs, which have no session log, and the hand-in cleanup (history, documents, this log).
 
 Read in this order: 48131bf2 (plan, stages 1–7, final code review), 74d2ec4f (manual test cases, server checks, first README), 00313c97 (fixes after code review).
 

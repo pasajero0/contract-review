@@ -36,7 +36,7 @@ Both listen on this computer only. On first start the API creates the database a
 4. Follow the progress line. A review ends within 60 seconds.
 5. Read the result, or click "Retry" if the review failed.
 
-To act as different lawyers at once, use separate browser profiles or a private window: the choice is stored in the browser and shared by its tabs.
+To act as different lawyers at once, use separate browser profiles or a private window: the choice is stored in the browser, and other tabs pick it up only after a reload.
 
 ### What to expect from the fake AI
 
@@ -115,19 +115,13 @@ curl $API/reviews/<reviewId>
 
 Month boundaries are checked only by tests.
 
-## Decisions on the three disputed points
+## Decisions
 
-The partner's requirements are about trust in a legal result, so they win over convenience. Where both can be met with clear labelling, we meet both.
-
-| Point | Decision | Why | ADR |
-|---|---|---|---|
-| Previous review while a new one runs | Shown in full, as a separate block labelled "Previous review", under a banner that a new review is running | Nobody waits in front of nothing, and the label keeps an old result from reading as the new one. Both sides get what they asked for | [0001](docs/adr/archive/0001-previous-review-stays-visible.md), [0021](docs/adr/archive/0021-previous-review-stays-readable-in-full.md) |
-| Findings before the review finishes | Progress only: a count and the seconds elapsed. We refuse the product manager's request | A review can still fail, and a partial list can read as final. After a failure the screen says "There is no result." | [0002](docs/adr/archive/0002-findings-only-after-completion.md) |
-| Requests beyond the plan | Rejected, with no queue and the reset date on screen. We refuse the product manager's request. A confirmation states the cost before each request | Nobody should believe a review is on its way when it will not start for weeks, or spend one of the ten without knowing | [0003](docs/adr/archive/0003-no-queue-beyond-plan.md) |
+The three disputed points, the domain rules and the other decisions are in [docs/adr/decisions.md](docs/adr/decisions.md). In short: the previous review stays on screen, labelled, during a new run; there are no findings before completion, only progress; and there is no queue beyond the plan, with a cost confirmation before every spend.
 
 ## Assumptions
 
-Where the brief is silent, we chose as follows. Reasons are in [the decisions](docs/adr/decisions.md).
+Where the brief is silent, we chose as follows. Reasons are in [the decisions](docs/adr/decisions.md), the [archived records](docs/adr/archive/README.md) and the specs.
 
 - A review counts in the month it was requested, in the workspace's time zone (Europe/Rome), even if it finishes in the next month.
 - A running review holds a plan slot, so 9 completed + 1 running rejects a new request. "Used" in the header counts only completed reviews.
@@ -140,14 +134,15 @@ Where the brief is silent, we chose as follows. Reasons are in [the decisions](d
 
 ## Refused
 
-Roles and permissions by job title; a queue beyond the plan; a `queued` status; findings before completion; a DI container; a job queue and a separate worker; WebSocket; the server time zone for the month boundary; event sourcing; a client generated from OpenAPI; our own styles; Docker; authentication, file upload and a real model. Reasons are in [the decisions](docs/adr/decisions.md).
+Roles and permissions by job title; a queue beyond the plan; a `queued` status; findings before completion; a DI container; a job queue and a separate worker; WebSocket; the server time zone for the month boundary; event sourcing; a client generated from OpenAPI; our own styles; Docker; authentication, file upload and a real model. Reasons are in [the decisions](docs/adr/decisions.md), the [archived records](docs/adr/archive/README.md) and each spec's "Out of scope".
 
 ## Manual verification
 
-We chose 36 core cases: the lawyer's path and the brief's rules. An AI agent drove a real Chrome, and a person ran the server steps and made the decisions. Some states were prepared by writing rows directly to a test database; the review's real outcomes were also seen on real runs.
+We chose 36 core cases, the lawyer's path and the brief's rules, listed in each feature's spec: [documents-list](docs/specs/documents-list/SPEC.md), [request-review](docs/specs/request-review/SPEC.md) and [read-result](docs/specs/read-result/SPEC.md). An AI agent drove a real Chrome, and a person ran the server steps and made the decisions. Some states were prepared by writing rows directly to a test database; the review's real outcomes were also seen on real runs.
 
-- **Verified, 34 of 36.** This includes using up the plan, and a late AI event on a real server: the finding and the completion that arrived after the deadline were dropped and logged, the review stayed `failed` / `timeout`, and the plan was not used.
+- **Verified, 34 of 36.** This includes using up the plan and a late AI event, both run on a real server: the finding and the completion that arrived after the deadline were dropped and logged, the review stayed `failed` / `timeout`, and the plan was not used.
 - **Not verified by hand, 2 of 36:** what the screen shows while the API is down during a review, and a restart before the deadline. Tests cover the first. In the POC, a script covered the restart, and a person saw a review end in `timeout` after its deadline passed while the API was down.
+- **Re-checked after the code-review fixes:** E5, M5, B8, C1, I7, D8 and the singular counts were run again in a browser with Claude in Chrome, and passed. That run has no session log.
 - **Not finished:** a wider list of less critical cases, including the database's write protections and month boundaries by hand. Automated tests cover both.
 
 ## Limitations
@@ -161,6 +156,8 @@ We chose 36 core cases: the lawyer's path and the brief's rules. An AI agent dro
 - Two versions of a document have the same title in the list; only "Read-only" tells them apart.
 - With 9 completed + 1 running, the disabled button says "10 of 10 used", which is not literally true.
 - If the plan cannot be refreshed, the document page keeps its last data with a notice, and the header shows the error.
+- While the page loads, the lawyer picker briefly shows 'Who are you?' before the saved choice; there are no loading skeletons.
+- The reason a button is disabled is not linked to it for screen readers (no aria-describedby).
 
 **By design of this solution:**
 
@@ -169,7 +166,20 @@ We chose 36 core cases: the lawyer's path and the brief's rules. An AI agent dro
 - Concurrency tests cannot show real interleaving: `node:sqlite` is synchronous on one connection.
 - The runner and the sweeper live in the API's process. A restart loses a running review's AI work, and the review ends in `timeout` at its deadline.
 - The first start needs internet access for the font.
-- The archived decision records in `docs/adr/archive/` keep their text as written, with only their final status added, so their links to other folders no longer resolve.
+- The documents list runs a few queries per document; fine at this size, a single query would be next.
+
+## What's next
+
+- **Survive restarts without losing work:** persist the runner's jobs, so a review cut off by a restart resumes or fails at once instead of holding its slot until the deadline.
+- **A real model** behind the existing `ReviewEngine` port: a timeout per call, no retries after the first finding, cost per review.
+- **Postgres:** the same rules, with a row lock on the workspace for the plan check; the partial unique index and the trigger carry over; database checks for the rules that now live in the service's SQL.
+- **More than one API instance:** the runner and the sweeper must not run twice — a lease row in the database or a job queue.
+- **Server-sent events** instead of polling, once many tabs are open.
+- **An audit trail:** an append-only `review_events` table — who requested, each finding as it arrived, why it failed.
+- **Security:** real authentication and roles instead of the header, a rate limit on review requests.
+- **Deploy:** a container image, CI running tests, types, lint and the layer rules, schema migrations, a health check.
+- **End-to-end tests:** the 36 manual cases as Playwright tests in CI.
+- **Observability:** structured logs keyed by review id; completion, failure and timeout rates; an alert when late completions grow.
 
 ## Documentation
 
@@ -177,7 +187,47 @@ Start with [CODEMAP.md](CODEMAP.md): the map of the code, specs and decisions.
 
 ## AI tools
 
-- **Claude Code with the agent-stack harness:** specs, ADRs, tests and code. Its hooks block skipped tests, imports across layers, and code that runs ahead of its spec.
-- **POC:** a main session planned and reviewed; subagents reviewed specs and code, and wrote the tests and code for the review fixes. Stages 2–6 were written by the main session, against the harness's routing table.
-- **Final solution:** a main session planned and reviewed. A `test-writer` subagent wrote failing tests from each spec's criteria, then an `implementer` subagent wrote the code.
-- **Claude in Chrome:** drove the manual test cases in a real browser. A person ran the server steps and decided what to do with each finding.
+**What I used**
+- **Claude (chat):** I worked through the brief and the data with it before any code — the three disputed points, the architecture, the manual test plan (the test cases themselves were then written in Claude Code). The decisions are mine; they are in [docs/adr/decisions.md](docs/adr/decisions.md). That conversation is not in the log.
+- **Claude Code** (Opus as the main session, Sonnet for subagents) with my agent-stack harness (see [The harness](#the-harness)). The main session planned each stage and reviewed the results; subagents split the work: a `test-writer` that wrote failing tests from each spec's criteria, an `implementer` that wrote the code, and a code reviewer at the end. The server code carried over from the POC kept its tests, renamed to the criteria. Almost all code was written by agents; I set the rules, read the agents' reports and decided every open question.
+- **Claude in Chrome:** ran the manual test cases in a real browser; I ran the server steps and decided what to do with each finding.
+
+**Where the AI got it wrong, and what caught it**
+- **A wrong test, caught by the database.** A test-writer seeded a finding into an already completed review. The database trigger rejected it; the implementer stopped and reported instead of changing the test, and the test was fixed.
+- **A stale test against the spec.** An old screen test said previous findings must never show during a run, which contradicts the decision to keep the previous review readable. The implementer flagged the conflict; I decided, and the test was narrowed.
+- **An agent worked around a hook.** A guard wrongly blocked an edit, and a subagent used `sed` instead. It said so in its report; later briefs tell agents not to work around a blocked edit.
+- **What tests could not see.** Screen tests passed under `jsdom`, but the browser run found that a failed review read like a result and that two tabs could act as different lawyers. The first is fixed; the second is listed under Limitations.
+- **What the code review found.** An error in the sweeper could stop the API, and server errors were not logged. Both were fixed test-first.
+
+## How the AI's output was checked
+
+- For the final solution, decisions and acceptance criteria came before code.
+- Tests were written from the criteria first, by a separate agent, and their failures were checked from the agent's report before any code. Where the code was already right, tests were checked by breaking the code on purpose. The agent that writes code may not change tests; the main session changed test setup a few times and replaced tests whose spec had changed.
+- Hooks block adding a skipped test or a suppressed check, on any branch. The spec gate blocks code ahead of its spec only on stage branches (`f-<feature>`); the review fixes ran on `main`, where the spec-first order was kept by hand. `pnpm check:deps` enforces the layer rules when run. The hooks watch the edit tools, not shell commands.
+- I read the agent's report, with its test and trace results, after stage 4 and after stage 7, and approved those merges. Stages 5 and 6 and the late review fixes went in without my check at the time; I checked them afterwards in a browser.
+- At the end, 34 of 36 core cases were run in a real browser (see Manual verification).
+
+## The harness
+
+`.claude/` holds a snapshot of agent-stack, my own harness for coding agents, as it was used here, with small clean-ups for publishing. It is a separate project; I set it up on this project in the POC, adapted it during this work and fed the changes back. What it does here: hooks block skipped tests and, on stage branches, code ahead of its spec; `trace` maps every acceptance criterion to its tests; subagent roles split spec review, test writing and implementation. During the work the harness ran in autonomous mode; it is published in interactive mode. If you open the repo in Claude Code, the hooks in `.claude/hooks/` are active: they need `jq`, and they block pushes and edits to the harness's hooks, scripts, settings and gates through the edit tools, and ask before installs.
+
+## AI session log
+
+[docs/ai-log/](docs/ai-log/) — the final solution's Claude Code sessions and subagents; its [index](docs/ai-log/README.md) gives the reading order. I worked with the agent in Russian, my native language; the log was translated into English by AI. Model reasoning, long outputs, the company's name, my surname and the POC's time records (the POC — setting up my agent harness, checking the risky parts and the first decisions — is counted separately; see Time spent) are removed. Not included: the POC session, the discussion of the final code review (the review itself is, as subagent `ac683760`), the Claude in Chrome runs, which have no session log, and the hand-in cleanup (history, documents, this log).
+
+## Time spent
+
+| Phase | Time |
+|---|---|
+| Building the solution, test cases, server checks, settings and the first README, in Claude Code | about 3 h 20 min |
+| Manual verification in a real browser (32 of the 34 cases; the 2 server cases are in the row above) | about 2 h |
+| Final code review and triage of its findings | about 20 min |
+| Fixes after code review, and their re-check | about 35 min |
+
+Computed from session timestamps, not a timer; gaps over 15 minutes are not counted. The browser run is from its test results' timestamps, pauses included. Not counted: preparing the hand-in (history, documents, translating this log).
+
+Before this I built a POC to set up and test my agent harness; its decisions and part of its server code carried over.
+
+The POC took about 3 h 50 min, mostly setting up the harness, checking the risky parts and writing the first decisions. It is not in the total above.
+
+Over the brief's 4 hours: building the solution, the code review and fixing its findings took about 4 h 15 min; on top of that I verified 34 of 36 core cases by hand, about 6 h 15 min in all.

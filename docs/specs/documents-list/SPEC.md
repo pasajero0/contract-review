@@ -91,6 +91,20 @@ Decisions the source documents did not settle. Each is built as written, and can
 - **If one refresh fails while polling,** the list is replaced by the error and "Retry".
 - **No automatic retries:** a failed call shows the error at once.
 
+## Manual cases
+
+Run by hand in a real browser, as part of the 36 core cases: 5 of 5 verified here.
+
+| ID | Case | Result |
+|---|---|---|
+| A1 | With no lawyer chosen: "Who are you?", three lawyers, and the documents and plan are visible | verified |
+| A6 | The plan line is the same on the list and on the document page | verified |
+| B1 | The list has 13 rows in the expected order, with a replaced version under its current one, marked "Read-only" | verified |
+| B3 | A running review in the list: "in progress", the count and seconds grow, who and when | verified |
+| B8 | A failure over an older result in the list: the reason first, the older result below | verified |
+
+B8 passed with a remark on how the screen read; that remark led to a fix, and the case was run again afterwards.
+
 ## Out of scope
 
 - Authentication, roles and permissions by job title: we only store who requested a review.
@@ -106,6 +120,7 @@ Tests carry AC ids: `.claude/bin/trace <feature>` lists what is not covered. Scr
 
 ## Changes
 
+- 2026-11-05 — No criterion changed: added the manual cases that were run for this feature.
 - 2026-11-05 — AC-20: an older result under a failure is labelled "Earlier result:". Added AC-23 (singular counts) and AC-24 (dates in the workspace's time zone).
 - 2026-11-04 — No criterion changed: the screen is built.
 - 2026-11-04 — Added "To check in manual testing": decisions the source documents did not settle.

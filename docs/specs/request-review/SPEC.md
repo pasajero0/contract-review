@@ -144,6 +144,40 @@ Decisions the source documents did not settle. Each is built as written, and can
 - **Texts the source documents do not give:** "Could not load the document.", "Could not refresh. Showing the last data.", "Could not send the request.", "Request a review?", "A new review is running. The result below is from an earlier review.", "Read-only — a newer version of this document exists."
 - **Simultaneous requests** (AC-15, AC-16) run in sequence in the tests, because `node:sqlite` is synchronous on one connection (ADR-0005).
 
+## Manual cases
+
+Run by hand in a real browser, or on a real server for K2 and K3, as part of the 36 core cases: 23 of 25 verified here.
+
+| ID | Case | Result |
+|---|---|---|
+| C1 | The confirmation states the cost | verified |
+| C3 | Cancel and Esc spend nothing | verified |
+| C4 | Confirm gives `201` and progress at once | verified |
+| C6 | The last review of the month has its own wording | verified |
+| C7 | Another lawyer's run blocks the document, and says who and when | verified |
+| D3 | During a run, only a count, with no partial result | verified |
+| D4 | A new run over an older result: progress, a banner, and the previous review in full | verified |
+| D6 | After success: the new result, and fast polling ends | verified |
+| D8 | A page opened earlier sees another lawyer's run | verified |
+| E1 | A document unknown to the fake AI fails the review, and the plan is not used | verified |
+| E4 | A timeout at 60 seconds | verified |
+| E5 | A failure after a completed review on the document page | verified |
+| E7 | Retry asks about the cost again | verified |
+| F1 | The plan runs out through real runs; failures do not count, and of two requests for the last slot, one wins | verified |
+| F2 | A running review holds a slot, so another document's button is disabled | verified |
+| F3 | With the plan used up: the button is disabled, no queue, and `POST` gives `409` `plan_exhausted` with the reset date | verified |
+| I4 | The API goes down during a review: the screen says it could not refresh and does not announce a failure | not verified |
+| K2 | On a real server, a late AI event after the timeout is dropped and logged | verified |
+| K3 | That review stays `failed` / `timeout`, and the plan is not used | verified |
+| K5 | The API restarts during a review, before the deadline | not verified |
+| M1 | Can an old result be taken for the new one during a run? | verified |
+| M2 | Is a partial result visible anywhere? | verified |
+| M3 | When the plan runs out, is it clear there is nothing to wait for, and when to come back? | verified |
+| M4 | Is there a cost confirmation before every spend? | verified |
+| M5 | Does a failure over an older result avoid reading as the outcome? | verified |
+
+D8 and M5 passed with remarks on how the screen read; those remarks led to fixes, and the cases were run again afterwards. Automated tests cover I4.
+
 ## Out of scope
 
 - A queue or a `queued` status (ADR-0003).
@@ -160,6 +194,7 @@ Tests carry AC ids: `.claude/bin/trace <feature>` lists what is not covered. Res
 
 ## Changes
 
+- 2026-11-05 — No criterion changed: added the manual cases that were run for this feature.
 - 2026-11-05 — AC-22: the confirmation says "the workspace's". AC-27, AC-39: the page goes on polling every 10 s — ADR 0023. AC-32, AC-33: the failure is a warning block with who and when, with "Retry" inside, and an older result is muted, labelled "Earlier result". AC-35: a request error shows only "Retry". AC-40: singular counts.
 - 2026-11-05 — No criterion changed: the Decisions table adds ADR 0022, which says what the database does not enforce.
 - 2026-11-05 — AC-35: "Retry" after a failed request asks for confirmation again, because repeating it is safe only while the first review is running. Added AC-36 (a sweep error does not stop the API), AC-37 (a server error is logged and keeps the contract's shape) and AC-38 (a rejected malformed request keeps it too).

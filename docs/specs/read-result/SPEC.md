@@ -78,6 +78,19 @@ Decisions the source documents did not settle. Each is built as written, and can
 - **A replaced version** shows a badge "review of an outdated version" inside its block, in addition to the normal label; the banner's link reads "Open the newest version".
 - **Counts line:** "1 high · 1 medium · 1 low". The source documents give no format.
 
+## Manual cases
+
+Run by hand in a real browser, as part of the 36 core cases: 6 of 6 verified here.
+
+| ID | Case | Result |
+|---|---|---|
+| G2 | The 18 findings of the franchise agreement in the planned order, with counts | verified |
+| G4 | A finding with no clause: "Not in the contract", no excerpt, last in its severity | verified |
+| G5 | A review with no findings: "Reviewed — no issues flagged." | verified |
+| H1 | A replaced version is read-only, with no request button | verified |
+| H2 | A banner about the replacement, with a link to the newest version | verified |
+| H4 | A replaced version's review shows its findings, marked as a review of an outdated version | verified |
+
 ## Out of scope
 
 - Editing or commenting on findings.
@@ -93,6 +106,7 @@ Tests carry AC ids: `.claude/bin/trace <feature>` lists what is not covered. Scr
 
 ## Changes
 
+- 2026-11-05 — No criterion changed: added the manual cases that were run for this feature.
 - 2026-11-05 — AC-10: after a failure the older result is labelled "Earlier result".
 - 2026-11-04 — AC-10: the ban covers the review that did not complete; the last completed one stays readable — ADR 0021.
 - 2026-11-04 — No criterion changed: "How to verify" now says screen tests run under Vitest with Testing Library (ADR 0017).
