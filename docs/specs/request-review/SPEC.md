@@ -75,6 +75,9 @@ Document view: `DocumentResponse` in `packages/contract` (`documents`), on route
 - **AC-12:** IF a finding has an unknown severity, THEN THE SYSTEM SHALL fail the review with `ai_error` (partner of AC-3; ADR-0012).
 - **AC-13:** IF a review is still running at 60 s, even with nothing sent by the AI, THEN THE SYSTEM SHALL give it as `failed` / `timeout` on read, and the sweeper SHALL persist it with `finished_at = deadline_at`, freeing the document and the slot (partner of AC-3).
 - **AC-14:** IF a finding, completion or failure arrives late, THEN THE SYSTEM SHALL drop it and log it ("completion arrived 4s after deadline, dropped"); the review never becomes completed and the plan is not used (ADR-0008).
+- **AC-36:** IF a sweep throws an error, THEN THE SYSTEM SHALL log it, keep the API running and run the next sweep on schedule (partner of AC-13).
+- **AC-37:** IF a request hits an unexpected server error, THEN THE SYSTEM SHALL log the error and respond `500` with the contract's `ErrorBody`, code `internal_error`, with no internal details in the body.
+- **AC-38:** IF the server cannot accept a request, such as malformed JSON, THEN THE SYSTEM SHALL respond with its `4xx` status and the contract's `ErrorBody`, code `bad_request`, and SHALL NOT log it as a server error (partner of AC-37).
 
 ### Edge cases
 
@@ -107,7 +110,7 @@ Whether a review can be requested and how many remain come from `canRequest`; th
 - **AC-31:** WHEN the document is superseded, THE SYSTEM SHALL show the same page with no "Request review" button (ADR-0004, ADR-0015).
 - **AC-32:** WHEN a review fails with `ai_error`, THE SYSTEM SHALL show "Review did not complete: AI error after 3 findings. There is no result.", a "Retry" button, and any previous completed review with its label (partner of AC-27).
 - **AC-33:** WHEN a review fails with `timeout`, THE SYSTEM SHALL show "Review did not complete within 60 seconds. There is no result." and a "Retry" button (partner of AC-27).
-- **AC-35:** IF the API does not answer, or its response fails validation, THEN THE SYSTEM SHALL show a short error message and a "Retry" button that repeats the failed call. It SHALL NOT show a running review as failed because of this. Repeating a request is safe: the server rejects a second review with `review_in_progress` (partner of AC-24, AC-25; ADR-0016).
+- **AC-35:** IF the API does not answer, or its response fails validation, THEN THE SYSTEM SHALL show a short error message and a "Retry" button. For a failed read, "Retry" repeats the call. For a failed request, "Retry" shows the cost confirmation again: a retry is safe only while the first review is still running; after that it is a new request and needs confirmation. It SHALL NOT show a running review as failed because of this (partner of AC-24, AC-25; ADR-0016).
 
 ### Edge cases
 
@@ -128,7 +131,7 @@ Decisions the source documents did not settle. Each is built as written, and can
 - **Exactly at the deadline** a review counts as overdue.
 - **A slow fake review keeps running** after its deadline until it ends, and its events are dropped and logged (ADR-0006).
 - **A failing fake review** takes the same 5–30 s as a normal one. The brief does not say.
-- **"Retry" after no answer** repeats the call. If the first request did reach the server, the second gets `review_in_progress`, and the screen shows that reason (AC-30, AC-35).
+- **"Retry" after a request got no answer** asks for confirmation again. If the first request did reach the server and its review is still running, the second gets `review_in_progress`, and the screen shows that reason (AC-30, AC-35).
 - **"Retry" on a failed review** asks for confirmation again (AC-34), so it takes two clicks.
 - **With no lawyer chosen,** the button is disabled, with "Choose who you are first".
 - **"Retry" on a failed review** is the request button relabelled, so it also respects `canRequest` and the chosen lawyer.
@@ -154,6 +157,7 @@ Tests carry AC ids: `.claude/bin/trace <feature>` lists what is not covered. Res
 
 ## Changes
 
+- 2026-11-05 — AC-35: "Retry" after a failed request asks for confirmation again, because repeating it is safe only while the first review is running. Added AC-36 (a sweep error does not stop the API), AC-37 (a server error is logged and keeps the contract's shape) and AC-38 (a rejected malformed request keeps it too).
 - 2026-11-04 — AC-25: the ban covers the running review's own findings. AC-26: the earlier review shows in full — ADR 0021.
 - 2026-11-04 — No criterion changed: the screen is built, and its open points are listed under "To check in manual testing".
 - 2026-11-04 — No criterion changed: "How to verify" now says screen tests run under Vitest with Testing Library (ADR 0017).
