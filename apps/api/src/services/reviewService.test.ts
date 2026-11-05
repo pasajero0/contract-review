@@ -163,6 +163,32 @@ describe('requestReview', () => {
     });
   });
 
+  it('request-review AC-1: a failed insert rolls the whole request back, and the runner does not start', async () => {
+    const first = newId(service.requestReview('doc-1', 'lawyer-1'));
+    started.length = 0;
+    await clock.advance(TIMEOUT + 1000);
+    // Every uuid() is the id of the existing review, so the INSERT collides on the primary key.
+    const colliding = createReviewService(
+      {
+        db,
+        clock,
+        random: { next: () => 0, uuid: () => first },
+        config: DEFAULT_CONFIG,
+        logger: { warn: () => {} },
+      },
+      { onStarted: (review) => started.push(review) },
+    );
+
+    expect(() => colliding.requestReview('doc-1', 'lawyer-2')).toThrow();
+
+    // The expiry done inside the transaction was rolled back with it.
+    expect(row(first)).toEqual({ status: 'running', failure_reason: null, finished_at: null });
+    expect(db.prepare('SELECT count(*) AS n FROM reviews').get()).toEqual({ n: 1 });
+    expect(started).toEqual([]);
+    // No transaction was left open.
+    expect(() => newId(service.requestReview('doc-2', 'lawyer-1'))).not.toThrow();
+  });
+
   it('leaves no transaction open after a rejection', () => {
     service.requestReview('missing', 'lawyer-1');
 
@@ -323,6 +349,15 @@ describe('late events', () => {
     expect(service.fail(id, 'ai_error')).toBe(false);
 
     expect(row(id).failure_reason).toBeNull();
+  });
+
+  it('request-review AC-14: logs a late failure with how late it was', async () => {
+    const id = newId(service.requestReview('doc-1', 'lawyer-1'));
+    await clock.advance(TIMEOUT + 4000);
+
+    expect(service.fail(id, 'ai_error')).toBe(false);
+
+    expect(logs).toEqual([expect.stringContaining('failure arrived 4s after deadline, dropped')]);
   });
 
   it('request-review AC-14: drops a failure exactly at the deadline', async () => {
