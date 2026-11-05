@@ -50,7 +50,7 @@ export function RequestControls({ canRequest, lawyerChosen, label, hideButton, p
             <AlertDialogDescription>
               {canRequest.allowed && canRequest.remaining === 1
                 ? 'This is the last review available this month.'
-                : `This uses 1 of your ${canRequest.allowed ? canRequest.remaining : 0} remaining reviews — only if it completes.`}
+                : `This uses 1 of the workspace's ${canRequest.allowed ? canRequest.remaining : 0} remaining reviews — only if it completes.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

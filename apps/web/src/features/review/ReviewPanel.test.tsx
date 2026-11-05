@@ -109,11 +109,11 @@ describe('ReviewPanel', () => {
     await screen.findByRole('button', { name: /request review/i });
     await user.click(requestButton());
 
-    await screen.findByText('This uses 1 of your 6 remaining reviews — only if it completes.');
+    await screen.findByText("This uses 1 of the workspace's 6 remaining reviews — only if it completes.");
 
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
 
-    expect(screen.queryByText(/this uses 1 of your/i)).toBeNull();
+    expect(screen.queryByText(/this uses 1 of the workspace's/i)).toBeNull();
     expect(stub.count(POST_PATH, 'POST')).toBe(0);
   });
 
@@ -182,7 +182,7 @@ describe('ReviewPanel', () => {
 
     await user.click(button);
 
-    expect(screen.queryByText(/this uses 1 of your/i)).toBeNull();
+    expect(screen.queryByText(/this uses 1 of the workspace's/i)).toBeNull();
     expect(stub.count(POST_PATH, 'POST')).toBe(0);
   });
 
@@ -517,7 +517,7 @@ describe('ReviewPanel', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Retry' }));
 
-    await screen.findByText(/this uses 1 of your 6 remaining reviews/i);
+    await screen.findByText(/this uses 1 of the workspace's 6 remaining reviews/i);
     expect(stub.count(POST_PATH, 'POST')).toBe(0);
 
     await user.click(screen.getByRole('button', { name: 'Confirm' }));
@@ -557,7 +557,7 @@ describe('ReviewPanel', () => {
     expect(stub.count(POST_PATH, 'POST')).toBe(1);
 
     await user.click(screen.getByRole('button', { name: 'Retry' }));
-    await screen.findByText(/this uses 1 of your 6 remaining reviews/i);
+    await screen.findByText(/this uses 1 of the workspace's 6 remaining reviews/i);
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(stub.count(POST_PATH, 'POST')).toBe(1);
@@ -584,7 +584,7 @@ describe('ReviewPanel', () => {
 
     await user.click(screen.getByRole('button', { name: 'Retry' }));
 
-    await screen.findByText(/this uses 1 of your 6 remaining reviews/i);
+    await screen.findByText(/this uses 1 of the workspace's 6 remaining reviews/i);
     expect(stub.count(POST_PATH, 'POST')).toBe(1);
 
     await user.click(screen.getByRole('button', { name: 'Confirm' }));
@@ -609,7 +609,7 @@ describe('ReviewPanel', () => {
     expect(screen.queryByRole('button', { name: /request review/i })).toBeNull();
 
     await user.click(screen.getByRole('button', { name: 'Retry' }));
-    await screen.findByText(/this uses 1 of your 6 remaining reviews/i);
+    await screen.findByText(/this uses 1 of the workspace's 6 remaining reviews/i);
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(screen.queryByRole('button', { name: /request review/i })).toBeNull();
@@ -631,7 +631,7 @@ describe('ReviewPanel', () => {
     expect(screen.queryByRole('button', { name: /request review/i })).toBeNull();
 
     await user.click(retries[0]!);
-    await screen.findByText(/this uses 1 of your 6 remaining reviews/i);
+    await screen.findByText(/this uses 1 of the workspace's 6 remaining reviews/i);
   });
 
   it('request-review AC-35: when the repeated request succeeds, the request error goes away', async () => {
