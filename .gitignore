@@ -7,3 +7,5 @@ next-env.d.ts
 *.db
 *.db-wal
 *.db-shm
+.env*
+!.env.example

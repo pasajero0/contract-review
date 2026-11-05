@@ -14,6 +14,8 @@ import { startSweeper } from './services/sweeper.ts';
 
 const SAMPLES_DIR = fileURLToPath(new URL('../../../samples/', import.meta.url));
 const DB_PATH = process.env.LEX_DB_PATH ?? fileURLToPath(new URL('../lex-poc.db', import.meta.url));
+const HOST = process.env.API_HOST ?? '127.0.0.1';
+const PORT = Number(process.env.API_PORT ?? 3001);
 
 const config = DEFAULT_CONFIG;
 const clock = systemClock;
@@ -34,5 +36,5 @@ startSweeper({ clock, config }, service);
 
 const app = buildApp();
 registerReviewRoutes(app, service);
-await app.listen({ port: 3001, host: '127.0.0.1' });
-console.log('API listening on http://127.0.0.1:3001');
+await app.listen({ port: PORT, host: HOST });
+console.log(`API listening on http://${HOST}:${PORT}`);
