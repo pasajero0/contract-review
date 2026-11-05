@@ -9,14 +9,22 @@ import {
   listItem,
   networkError,
   okReply,
+  quotaBody,
   rawReply,
   renderWithClient,
   rowOf,
   stubFetch,
+  type Reply,
 } from '@/test-helpers';
 import { DocumentList } from './DocumentList';
 
 const DOCUMENTS = '/api/documents';
+const QUOTA = '/api/quota';
+
+/** `stubFetch` with the quota route the list needs for its time zone; pass `quota` to change it. */
+function stubList(routes: Record<string, Reply | Reply[]>, quota: Reply | Reply[] = okReply(quotaBody())) {
+  return stubFetch({ [QUOTA]: quota, ...routes });
+}
 const REQUESTED_AT = Date.UTC(2026, 10, 3, 12, 0, 0);
 
 function completed(overrides: Partial<Extract<DocumentState, { kind: 'completed' }>> = {}): DocumentState {
@@ -43,8 +51,8 @@ function inProgress(overrides: Partial<Extract<DocumentState, { kind: 'in_progre
   };
 }
 
-async function renderList(items: DocumentListItem[], serverTime = SERVER_TIME) {
-  const stub = stubFetch({ [DOCUMENTS]: okReply(documentsBody(items, serverTime)) });
+async function renderList(items: DocumentListItem[], serverTime = SERVER_TIME, quota?: Reply) {
+  const stub = stubList({ [DOCUMENTS]: okReply(documentsBody(items, serverTime)) }, quota);
   renderWithClient(<DocumentList />);
   const list = await screen.findByRole('list');
   return { stub, list };
@@ -117,7 +125,7 @@ describe('DocumentList', () => {
     const advance = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms); });
     const running = listItem({ documentId: 'd1', title: 'Alpha NDA', state: inProgress() });
     const done = listItem({ documentId: 'd1', title: 'Alpha NDA', state: completed() });
-    const stub = stubFetch({
+    const stub = stubList({
       [DOCUMENTS]: [
         okReply(documentsBody([running])),
         okReply(documentsBody([running])),
@@ -141,7 +149,7 @@ describe('DocumentList', () => {
   it('documents-list AC-16: does not poll when no review is in progress', async () => {
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
     const advance = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms); });
-    const stub = stubFetch({
+    const stub = stubList({
       [DOCUMENTS]: okReply(
         documentsBody([
           listItem({ documentId: 'd1', title: 'Alpha NDA', state: completed() }),
@@ -302,6 +310,69 @@ describe('DocumentList', () => {
     expect(rowOf(list, 'Alpha NDA').textContent).toContain(`Earlier result: ${phrase}`);
   });
 
+  describe.each([
+    ['Asia/Tokyo', '3 Nov 2026, 21:00', '2 Nov 2026, 21:00'],
+    ['Europe/Rome', '3 Nov 2026, 13:00', '2 Nov 2026, 13:00'],
+  ])('when the workspace time zone is %s', (timeZone, requested, earlier) => {
+    it("documents-list AC-24: shows dates in the workspace's time zone, from the quota", async () => {
+      // 12:00 UTC on 3 November: 21:00 in Tokyo, 13:00 in Rome.
+      const { list } = await renderList(
+        [
+          listItem({ documentId: 'd1', title: 'Alpha NDA', state: completed() }),
+          listItem({
+            documentId: 'd2',
+            title: 'Beta Lease',
+            state: {
+              kind: 'failed',
+              reviewId: 'r-fail',
+              requestedBy: 'Paula Partner',
+              requestedAt: REQUESTED_AT,
+              failureReason: 'timeout',
+              findingsCount: 0,
+              latestCompleted: {
+                reviewId: 'r-old',
+                requestedBy: 'Sam Senior',
+                requestedAt: REQUESTED_AT - 86_400_000,
+                findingsCount: 6,
+                highCount: 3,
+              },
+            },
+          }),
+        ],
+        SERVER_TIME,
+        okReply(quotaBody({ timeZone })),
+      );
+
+      expect(rowOf(list, 'Alpha NDA').textContent).toContain(`requested by Sam Senior on ${requested}`);
+      const failed = rowOf(list, 'Beta Lease').textContent ?? '';
+      expect(failed).toContain(`requested by Paula Partner on ${requested}`);
+      expect(failed).toContain(`requested by Sam Senior on ${earlier}`);
+    });
+  });
+
+  it('documents-list AC-24: when the quota cannot be read, shows the error and Retry; Retry reads it again and shows the list', async () => {
+    const user = userEvent.setup();
+    const stub = stubList(
+      { [DOCUMENTS]: okReply(documentsBody([listItem({ documentId: 'd1', title: 'Alpha NDA', state: completed() })])) },
+      [networkError(), okReply(quotaBody({ timeZone: 'Asia/Tokyo' }))],
+    );
+
+    renderWithClient(<DocumentList />);
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('Could not load the documents.');
+    expect(screen.queryByRole('list')).toBeNull();
+    expect(screen.queryByText(/2026/)).toBeNull();
+    expect(stub.count(QUOTA)).toBe(1);
+
+    await user.click(within(alert).getByRole('button', { name: 'Retry' }));
+
+    const list = await screen.findByRole('list');
+    expect(stub.count(QUOTA)).toBe(2);
+    expect(rowOf(list, 'Alpha NDA').textContent).toContain('3 Nov 2026, 21:00');
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
   it('documents-list AC-21: shows "completed, no issues flagged" for a completed review without findings, unlike "not reviewed"', async () => {
     const { list } = await renderList([
       listItem({
@@ -328,7 +399,7 @@ describe('DocumentList', () => {
   ])('when %s', (_name, failure) => {
     it('documents-list AC-22: shows an error and a Retry button; Retry repeats the call and then shows the list', async () => {
       const user = userEvent.setup();
-      const stub = stubFetch({
+      const stub = stubList({
         [DOCUMENTS]: [failure, okReply(documentsBody([listItem({ documentId: 'd1', title: 'Alpha NDA' })]))],
       });
 

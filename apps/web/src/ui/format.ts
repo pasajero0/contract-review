@@ -1,7 +1,7 @@
 // Pure formatting helpers. They take values from the API and never read the clock.
 
-/** "3 Nov 2026, 12:00" in the given time zone, or the browser's when none is given. */
-export function formatDateTime(epochMs: number, timeZone?: string): string {
+/** "3 Nov 2026, 12:00" in the given time zone. The zone is required so the browser's never slips in. */
+export function formatDateTime(epochMs: number, timeZone: string): string {
   return new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone }).format(epochMs);
 }
 
