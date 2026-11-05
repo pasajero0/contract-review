@@ -1,0 +1,97 @@
+#!/usr/bin/env bash
+# Run the active stage's task checks and record the result in .claude/tmp/<stage>/tasks.json.
+# The ONLY writer of `passes` (guard-file blocks Edit/Write on an existing tasks.json), so "passes"
+# always means "its verify command really exited 0". Output of every run goes to verify.log.
+#
+# Usage: .claude/bin/verify [TASK_ID ...]     (no ids → every task)
+# Exit:  0 all requested tasks pass · 1 some fail · 2 no active stage / bad tasks.json
+set -uo pipefail
+
+PROJECT_DIR=$(cd "$(dirname "$0")/../.." && pwd)
+export CLAUDE_PROJECT_DIR="$PROJECT_DIR"
+. "$PROJECT_DIR/.claude/hooks/gates-lib.sh"
+
+tasks=$(tasks_file)
+if [ -z "$tasks" ] || [ ! -f "$tasks" ]; then
+  echo "verify: no active stage or no tasks.json — run /plan first (.claude/tmp/<stage>/tasks.json)." >&2
+  exit 2
+fi
+if ! jq -e '.tasks | type == "array"' "$tasks" >/dev/null 2>&1; then
+  echo "verify: $tasks is not valid JSON with a tasks array." >&2
+  exit 2
+fi
+
+if [ $# -gt 0 ]; then
+  ids=$(printf '%s\n' "$@")
+else
+  ids=$(jq -r '.tasks[].id' "$tasks")
+fi
+
+# One run at a time: parallel implementer subagents would otherwise lose each other's updates.
+lock="$(dirname "$tasks")/.verify.lock"
+tries=0
+until mkdir "$lock" 2>/dev/null; do
+  tries=$((tries + 1))
+  if [ "$tries" -ge 600 ]; then
+    echo "verify: another run holds $lock for 60s — if none is running, remove it." >&2
+    exit 2
+  fi
+  sleep 0.1
+done
+trap 'rmdir "$lock" 2>/dev/null' EXIT
+
+log="$(dirname "$tasks")/verify.log"
+{
+  echo "=== verify $(date -u +%Y-%m-%dT%H:%M:%SZ) — stage $(active_stage)"
+} >>"$log"
+
+failed=0
+while IFS= read -r id; do
+  [ -z "$id" ] && continue
+  cmd=$(jq -r --arg id "$id" '.tasks[] | select(.id == $id) | .verify // empty' "$tasks")
+  # The plan is agent-written, so every verify command passes the same guard as a Bash call:
+  # verify must not become a way around the push / package-manager / install rules.
+  guard_out=""
+  if [ -n "$cmd" ]; then
+    guard_out=$(jq -n --arg c "$cmd" '{tool_input: {command: $c}}' |
+      bash "$PROJECT_DIR/.claude/hooks/guard-bash.sh" 2>&1)
+    guard_rc=$?
+  fi
+  if [ -z "$cmd" ]; then
+    echo "FAIL $id — no such task or no verify command"
+    rc=1
+    out=""
+  elif [ "$guard_rc" -ne 0 ] || [ -n "$guard_out" ]; then
+    echo "FAIL $id — verify command refused by guard-bash: $cmd"
+    rc=126
+    out="refused: ${guard_out:-blocked}"
+  else
+    out=$(cd "$PROJECT_DIR" && bash -c "$cmd" </dev/null 2>&1)
+    rc=$?
+  fi
+  pass=false
+  [ "$rc" -eq 0 ] && pass=true
+  tmp=$(mktemp)
+  jq --arg id "$id" --argjson pass "$pass" '
+    .tasks |= map(if .id == $id
+      then .passes = $pass | .fails = ((.fails // 0) + (if $pass then 0 else 1 end))
+      else . end)' "$tasks" >"$tmp" && mv "$tmp" "$tasks"
+  {
+    echo "--- $id (exit $rc): $cmd"
+    printf '%s\n' "$out"
+  } >>"$log"
+  if [ "$pass" = true ]; then
+    echo "PASS $id — $cmd"
+  else
+    failed=1
+    fails=$(jq -r --arg id "$id" '.tasks[] | select(.id == $id) | .fails // 0' "$tasks")
+    echo "FAIL $id (exit $rc, failed $fails time(s)) — $cmd"
+    [ -n "$out" ] && printf '%s\n' "$out" | tail -n 20 | sed 's/^/    /'
+    [ "${fails:-0}" -ge 2 ] 2>/dev/null &&
+      echo "    → $id failed twice: escalate to a stronger model tier (see /plan)."
+  fi
+done <<<"$ids"
+
+summary=$(jq -r '"\([.tasks[] | select(.passes == true)] | length)/\(.tasks | length) tasks passing"' "$tasks")
+echo "$summary — log: ${log#"$PROJECT_DIR"/}"
+exit "$failed"

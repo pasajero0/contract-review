@@ -23,7 +23,7 @@ All documents live in `docs/`. Only `README.md`, `CLAUDE.md` and this file sit i
 | [docs/poc/](docs/poc/conclusions.md) | POC archive: [plan and results](docs/poc/plan.md), [conclusions](docs/poc/conclusions.md) |
 | [README.md](README.md) | Run, test, the three decisions, limitations, AI tools, time |
 | [CLAUDE.md](CLAUDE.md) | Working rules, including where each document goes |
-| `.claude/` | The agent-stack harness, ignored by git |
+| `.claude/` | The agent-stack harness; `tmp/` and local settings are ignored |
 
 ## Features
 

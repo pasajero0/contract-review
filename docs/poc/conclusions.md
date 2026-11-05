@@ -1,6 +1,6 @@
 # POC conclusions
 
-What the POC showed, what to do in the real solution, and why. Answers to the plan's questions: `docs/poc/plan.md` §7. Decisions: `docs/adr/decisions.md`. Evidence per stage: `.claude/tmp/poc-diary.md`, `.claude/tmp/poc-reports.md`.
+What the POC showed, what to do in the real solution, and why. Answers to the plan's questions: `docs/poc/plan.md` §7. Decisions: `docs/adr/decisions.md`. Evidence per stage: the local diary and reports (not in this repository).
 
 State: commit `d7706d5`; 109 tests, `typecheck`, `lint` and `check:deps` pass. Q8 and the POC time are still open (Stage 7).
 

@@ -1,0 +1,165 @@
+#!/usr/bin/env bash
+# Code health: SLIs measured on what this branch changed, checked against SLOs in gates.json.
+# Like service monitoring: metrics (SLIs) → targets (SLOs) → a breach stops the line until it is
+# fixed or a human accepts it (an ADR + a raised limit). Only files changed on this branch count,
+# so old debt does not block new work and new debt cannot slip in ("no worse than before").
+#
+# Built-in, any stack:   maxFileLines     — longest changed code file   (slo.maxFileLines)
+#                        newDependencies  — added to package.json / requirements.txt / go.mod
+#                                           since the base branch       (slo.newDependencies)
+# Project commands:      gates.json → health: [{ "name", "command" ({files} = changed code files),
+#                        "max" }] — the command prints one number, e.g. functions over complexity 10.
+# null limit = report only. Each run appends a line to .claude/tmp/health.jsonl (the time series).
+#
+# Usage: .claude/bin/health [--quick]     (--quick: built-in metrics only — fast, used by evidence-gate)
+# Exit:  0 within SLOs · 1 an SLO is broken · 2 cannot run
+set -uo pipefail
+
+PROJECT_DIR=$(cd "$(dirname "$0")/../.." && pwd)
+export CLAUDE_PROJECT_DIR="$PROJECT_DIR"
+. "$PROJECT_DIR/.claude/hooks/gates-lib.sh"
+cd "$PROJECT_DIR" || exit 2
+if ! git rev-parse --git-dir >/dev/null 2>&1; then
+  echo "health: not a git repository." >&2
+  exit 2
+fi
+quick=no
+[ "${1:-}" = "--quick" ] && quick=yes
+ref=$(base_ref)
+
+# Changed on this branch: committed since the base, staged / unstaged, and new untracked files.
+changed=$({
+  [ -n "$ref" ] && git diff --name-only --diff-filter=ACMR "$ref"...HEAD 2>/dev/null
+  git diff --name-only --diff-filter=ACMR HEAD 2>/dev/null
+  git ls-files -o --exclude-standard
+} | sort -u)
+
+# Code = changed files that are not docs/open paths, generated files or tests.
+open_globs=$(gate_list '.openPaths')
+protected_globs=$(gate_list '.protectedGlobs')
+test_globs=$(gate_list '.testGlobs')
+code=$(printf '%s\n' "$changed" | while IFS= read -r f; do
+  { [ -n "$f" ] && [ -f "$f" ]; } || continue
+  printf '%s\n' "$open_globs" | glob_match_any "$f" && continue
+  printf '%s\n' "$protected_globs" | glob_match_any "$f" && continue
+  printf '%s\n' "$test_globs" | glob_match_any "$f" && continue
+  printf '%s\n' "$f"
+done)
+code_count=$(printf '%s\n' "$code" | sed '/^$/d' | wc -l | tr -d ' ')
+
+# --- built-in: longest changed file ---
+max_lines=0
+max_file=""
+while IFS= read -r f; do
+  [ -z "$f" ] && continue
+  n=$(wc -l <"$f" | tr -d ' ')
+  if [ "$n" -gt "$max_lines" ]; then
+    max_lines=$n
+    max_file=$f
+  fi
+done <<<"$code"
+
+# --- built-in: dependencies added since the base branch ---
+deps_list() { # $1 = manifest content, $2 = manifest name
+  case "$2" in
+    package.json)
+      printf '%s' "$1" | jq -r '((.dependencies // {}) + (.devDependencies // {}) + (.optionalDependencies // {})) | keys[]' 2>/dev/null
+      ;;
+    requirements.txt)
+      printf '%s\n' "$1" | sed -E 's/[#;].*//; s/[[:space:]]//g; s/[<>=!~[].*//' | grep -v '^-' | sed '/^$/d'
+      ;;
+    go.mod)
+      printf '%s\n' "$1" | awk '/^require \(/ { f = 1; next } f && /^\)/ { f = 0 } f { print $1 } /^require [^(]/ { print $2 }'
+      ;;
+  esac
+}
+new_deps=""
+for manifest in package.json requirements.txt go.mod; do
+  [ -f "$manifest" ] || continue
+  now=$(deps_list "$(cat "$manifest")" "$manifest" | sort -u)
+  before=""
+  [ -n "$ref" ] && before=$(deps_list "$(git show "$ref:$manifest" 2>/dev/null)" "$manifest" | sort -u)
+  added=$(comm -13 <(printf '%s\n' "$before" | sed '/^$/d') <(printf '%s\n' "$now" | sed '/^$/d') | tr '\n' ' ')
+  new_deps="$new_deps$added"
+done
+new_dep_count=$(printf '%s' "$new_deps" | wc -w | tr -d ' ')
+
+# --- report + SLO check ---
+broken=""
+json='{}'
+rows=""
+record() { # name value limit detail
+  local name=$1 value=$2 limit=$3 detail=$4 status
+  if [ "$value" = "n/a" ]; then
+    status="n/a"
+  elif [ -z "$limit" ] || [ "$limit" = "null" ]; then
+    status="report"
+  elif [ "$value" -gt "$limit" ]; then
+    status="BROKEN"
+    broken="$broken $name"
+  else
+    status="ok"
+  fi
+  rows="$rows$(printf '  %-18s %-6s limit %-6s %-7s %s' "$name" "$value" "${limit:-—}" "$status" "$detail")
+"
+  if [ "$value" = "n/a" ]; then
+    json=$(printf '%s' "$json" | jq -c --arg k "$name" '. + {($k): null}')
+  else
+    json=$(printf '%s' "$json" | jq -c --arg k "$name" --argjson v "$value" '. + {($k): $v}')
+  fi
+}
+
+limit_max_lines=$(gate_get '.slo.maxFileLines')
+record maxFileLines "$max_lines" "$limit_max_lines" "${max_file}"
+record newDependencies "$new_dep_count" "$(gate_get '.slo.newDependencies')" "$new_deps"
+
+if [ "$quick" = no ]; then
+  # Project commands get the changed code files (narrowed to lintMatch when set), shell-quoted.
+  lint_globs=$(gate_list '.lintMatch')
+  files=""
+  while IFS= read -r f; do
+    [ -z "$f" ] && continue
+    if [ -n "$lint_globs" ] && ! printf '%s\n' "$lint_globs" | glob_match_any "$f"; then continue; fi
+    files="$files $(printf '%q' "$f")"
+  done <<<"$code"
+  metrics=$(gate_get '.health | length')
+  i=0
+  while [ "$i" -lt "${metrics:-0}" ]; do
+    name=$(gate_get ".health[$i].name")
+    cmd=$(gate_get ".health[$i].command")
+    limit=$(gate_get ".health[$i].max")
+    i=$((i + 1))
+    if [ -z "$files" ]; then
+      record "$name" 0 "$limit" "no changed files to measure"
+      continue
+    fi
+    run=""
+    rest=$cmd
+    while case "$rest" in *"{files}"*) true ;; *) false ;; esac; do
+      run="$run${rest%%"{files}"*}$files"
+      rest=${rest#*"{files}"}
+    done
+    run="$run$rest"
+    out=$(bash -c "$run" </dev/null 2>/dev/null | tail -n 1 | tr -d '[:space:]')
+    case "$out" in
+      "" | *[!0-9]*) record "$name" "n/a" "$limit" "command failed or printed no number: $cmd" ;;
+      *) record "$name" "$out" "$limit" "" ;;
+    esac
+  done
+fi
+
+echo "health vs ${ref:-(no base branch)} — $code_count changed code file(s)"
+printf '%s' "$rows"
+
+mkdir -p "$PROJECT_DIR/.claude/tmp"
+jq -nc --arg at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+  --arg branch "$(git symbolic-ref --quiet --short HEAD 2>/dev/null || echo detached)" \
+  --arg stage "$(active_stage)" --argjson metrics "$json" --arg broken "${broken# }" \
+  '{at: $at, branch: $branch, stage: $stage, metrics: $metrics, broken: ($broken | split(" ") | map(select(. != "")))}' \
+  >>"$PROJECT_DIR/.claude/tmp/health.jsonl"
+
+if [ -n "$broken" ]; then
+  echo "SLO broken:$broken — fix the code; if the growth is justified, record why in an ADR and ask the human to raise the limit in .claude/gates.json."
+  exit 1
+fi
+exit 0

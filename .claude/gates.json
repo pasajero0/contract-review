@@ -1,0 +1,67 @@
+{
+  "mode": "interactive",
+  "baseBranch": "main",
+  "specsDir": "docs/specs",
+  "stagePattern": "^f-([a-z-]+)$",
+  "adrDir": "docs/adr",
+  "specGate": "stage",
+  "openPaths": [
+    "docs/*",
+    "*.md",
+    ".claude/*",
+    ".gitignore"
+  ],
+  "protectedGlobs": [],
+  "packageManager": "",
+  "forbiddenPackageManagers": [],
+  "installPatterns": [
+    "(pnpm|npm|yarn|bun)[[:space:]]+(add|install|i)([[:space:]]+-[^[:space:]]+)*[[:space:]]+[^-[:space:]]",
+    "(pip|pip3|pipx)[[:space:]]+install",
+    "uv[[:space:]]+(add|pip[[:space:]]+install|tool[[:space:]]+install)",
+    "poetry[[:space:]]+add",
+    "brew[[:space:]]+(install|upgrade|tap)",
+    "cargo[[:space:]]+(add|install)",
+    "go[[:space:]]+(get|install)",
+    "gem[[:space:]]+install",
+    "apt(-get)?[[:space:]]+install",
+    "claude[[:space:]]+(plugin|mcp)[[:space:]]+(install|add)",
+    "(curl|wget)[^|]*\\|[[:space:]]*(sudo[[:space:]]+)?(ba|z)?sh"
+  ],
+  "cheatGuard": true,
+  "cheatPatterns": [
+    "(^|[^A-Za-z0-9_])(it|test|describe|suite|context|bench)\\.(skip|only)",
+    "(^|[^A-Za-z0-9_.])(xit|xtest|xdescribe|fit|fdescribe)[[:space:]]*\\(",
+    "@ts-ignore",
+    "@ts-nocheck",
+    "eslint-disable",
+    "biome-ignore",
+    "(:|[[:space:]]as)[[:space:]]*any([^A-Za-z0-9_]|$)",
+    "@pytest\\.mark\\.(skip|xfail)",
+    "pytest\\.skip\\(",
+    "@unittest\\.skip",
+    "#[[:space:]]*type:[[:space:]]*ignore",
+    "#[[:space:]]*noqa",
+    "t\\.Skip(Now|f)?\\(",
+    "//[[:space:]]*nolint",
+    "#\\[ignore\\]"
+  ],
+  "evidenceGate": true,
+  "commands": {
+    "test": "pnpm test",
+    "lint": "pnpm lint"
+  },
+  "lintMatch": [],
+  "testGlobs": [
+    "tests/*",
+    "*/tests/*",
+    "test/*",
+    "*/test/*",
+    "*test*"
+  ],
+  "layers": [],
+  "slo": {
+    "maxFileLines": 400,
+    "newDependencies": null
+  },
+  "health": []
+}

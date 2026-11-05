@@ -35,7 +35,7 @@ If time runs short, cut screen tests first. Never cut the brief's rules, the thr
 - At the end of each stage, the report also names the commands run with their result, and **"Decisions not in plan"**: anything decided that the docs do not cover.
 - Commits: one stage = one commit, with generated shadcn components in their own commit (`docs/adr/archive/0013-tooling-choices.md`). The agent may commit a finished stage. Never push.
 - Commit description: bullets saying what was done and, where useful, why.
-- Diary: `.claude/tmp/poc-diary.md`, written during each stage: what was done, difficulties and mistakes, decisions not in the plan, what may not work.
+- Diary: `.claude/tmp/poc-diary.md` (local, not in the repository), written during each stage: what was done, difficulties and mistakes, decisions not in the plan, what may not work.
 - **Tests first, through subagents.** `test-writer` writes failing tests from the spec's criteria, named `<feature> AC-n: …`. `implementer` then writes the code. The main session plans and reviews.
 - **Never change a test to make it pass.** If a test looks wrong, stop and explain why.
 - Dependencies: only the ones allowed in `docs/poc/plan.md` §3 and ADR 0017, at exact versions. Ask before adding anything else. Prefer a proven library to hand-written code.
@@ -55,7 +55,7 @@ All documents live in `docs/`; only `README.md`, `CLAUDE.md` and `CODEMAP.md` si
 - **`docs/architecture/`:** how the code is organised: overview, backend, frontend. **`CODEMAP.md`:** the map; link every new spec from it. **`docs/poc/`:** the POC archive.
 - No other Markdown files. Details: `.claude/rules/docs-layout.md`.
 - `specGate` is `stage`: code is open on `main`, and the gate applies on stage branches.
-- This file holds the project's working rules and is tracked in git. The harness guide is `.claude/CLAUDE.md`, ignored with the rest of `.claude/`.
+- This file holds the project's working rules and is tracked in git. The harness guide is `.claude/CLAUDE.md`, tracked with the harness; `.claude/tmp/` and local settings stay ignored.
 
 ## Architecture rules (see `docs/architecture/`)
 

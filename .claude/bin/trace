@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# Trace a stage's acceptance criteria to its tests — feature drift shows up here.
+#   missing: a criterion in the spec with no test that names it
+#   orphan:  a test that names a criterion the spec does not have (code built on requirements
+#            that never reached the spec, or a criterion removed without its tests)
+# Tests name criteria with the stage in front, so ids from different stages never collide:
+#   it("A0 AC-3: counts duplicates")   ·   def test_A0_AC_3_counts_duplicates()
+# Test files: gates.json → testGlobs. Spec: <specsDir>/<stage>/SPEC.md in the working tree.
+#
+# Usage: .claude/bin/trace [STAGE]      (default: the stage from the branch name)
+# Exit:  0 every criterion traced, no orphans · 1 gaps · 2 no stage / no spec
+set -uo pipefail
+
+PROJECT_DIR=$(cd "$(dirname "$0")/../.." && pwd)
+export CLAUDE_PROJECT_DIR="$PROJECT_DIR"
+. "$PROJECT_DIR/.claude/hooks/gates-lib.sh"
+
+stage=${1:-$(active_stage)}
+if [ -z "$stage" ]; then
+  echo "trace: no stage — pass one, or work on a stage branch (A0-…)." >&2
+  exit 2
+fi
+specs=$(gate_get '.specsDir')
+spec="$PROJECT_DIR/${specs:-docs/specs}/$stage/SPEC.md"
+if [ ! -f "$spec" ]; then
+  echo "trace: no spec at ${spec#"$PROJECT_DIR"/}." >&2
+  exit 2
+fi
+
+# Criteria are defined by list items that start with their id: "- **AC-3:** WHEN …".
+defined=$(grep -E '^[[:space:]]*[-*][[:space:]]*\**AC-[0-9]+' "$spec" | grep -Eo 'AC-[0-9]+' | sort -u)
+
+# Every tracked or new (not ignored) file matching testGlobs.
+stage_re=$(printf '%s' "$stage" | sed 's/[.]/\\./g')
+globs=$(gate_list '.testGlobs') # read once, not per file
+refs=$(cd "$PROJECT_DIR" && git ls-files -co --exclude-standard 2>/dev/null |
+  while IFS= read -r f; do
+    printf '%s\n' "$globs" | glob_match_any "$f" && printf '%s\n' "$f"
+  done |
+  while IFS= read -r f; do
+    grep -Eo -- "${stage_re}[ ._-]+AC[-_]?[0-9]+" "$f" 2>/dev/null
+  done |
+  grep -Eo '[0-9]+$' | sed 's/^/AC-/' | sort -u)
+
+missing=$(comm -23 <(printf '%s\n' "$defined" | sed '/^$/d') <(printf '%s\n' "$refs" | sed '/^$/d'))
+orphan=$(comm -13 <(printf '%s\n' "$defined" | sed '/^$/d') <(printf '%s\n' "$refs" | sed '/^$/d'))
+total=$(printf '%s\n' "$defined" | sed '/^$/d' | wc -l | tr -d ' ')
+traced=$((total - $(printf '%s\n' "$missing" | sed '/^$/d' | wc -l | tr -d ' ')))
+
+echo "trace $stage: $traced/$total criteria have tests"
+[ -n "$missing" ] && echo "  missing tests: $(printf '%s' "$missing" | tr '\n' ' ')"
+[ -n "$orphan" ] && echo "  tests for criteria not in the spec: $(printf '%s' "$orphan" | tr '\n' ' ')— update the spec first, or remove them"
+if [ "$total" -eq 0 ]; then
+  echo "  no criteria found — list them as '- **AC-1:** …' in the spec"
+  exit 1
+fi
+[ -z "$missing" ] && [ -z "$orphan" ] && exit 0
+exit 1
