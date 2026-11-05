@@ -434,7 +434,26 @@ describe('ReviewPanel', () => {
     });
   });
 
-  it('request-review AC-35: when the POST gets no answer, shows an error and Retry; Retry repeats the POST with no second confirmation', async () => {
+  it('request-review AC-35: cancelling the confirmation after a lost POST sends nothing and keeps Retry', async () => {
+    const user = userEvent.setup();
+    const stub = stubDocument(okReply(allowed(6)), { [POST]: [networkError()] });
+    renderPanel();
+
+    await screen.findByRole('button', { name: /request review/i });
+    await user.click(requestButton());
+    await user.click(await screen.findByRole('button', { name: 'Confirm' }));
+    await screen.findByRole('alert');
+    expect(stub.count(POST_PATH, 'POST')).toBe(1);
+
+    await user.click(screen.getByRole('button', { name: 'Retry' }));
+    await screen.findByText(/this uses 1 of your 6 remaining reviews/i);
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(stub.count(POST_PATH, 'POST')).toBe(1);
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy();
+  });
+
+  it('request-review AC-35: when the POST gets no answer, Retry shows the cost confirmation again and sends nothing until confirmed', async () => {
     const user = userEvent.setup();
     const stub = stubDocument(okReply(allowed(6)), {
       // The first request may have reached the server: the repeat is rejected as already running.
@@ -454,9 +473,13 @@ describe('ReviewPanel', () => {
 
     await user.click(screen.getByRole('button', { name: 'Retry' }));
 
+    await screen.findByText(/this uses 1 of your 6 remaining reviews/i);
+    expect(stub.count(POST_PATH, 'POST')).toBe(1);
+
+    await user.click(screen.getByRole('button', { name: 'Confirm' }));
+
     await screen.findByText(RUNNING_TEXT);
     expect(stub.count(POST_PATH, 'POST')).toBe(2);
-    expect(screen.queryByText(/this uses 1 of your/i)).toBeNull();
     expect(screen.queryByText(/did not complete/i)).toBeNull();
   });
 

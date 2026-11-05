@@ -40,6 +40,7 @@ export function ReviewPanel({ documentId }: { documentId: string }) {
     () => false,
   );
   const [rejection, setRejection] = useState<Rejection | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
   const docQuery = useQuery({
     queryKey: queryKeys.document(documentId),
@@ -125,13 +126,15 @@ export function ReviewPanel({ documentId }: { documentId: string }) {
         label={failed ? 'Retry' : 'Request review'}
         pending={request.isPending}
         timeZone={quota.timeZone}
+        confirmOpen={confirmOpen}
+        onConfirmOpenChange={setConfirmOpen}
         onConfirm={() => {
           setRejection(null);
           request.mutate();
         }}
       />
-      {request.isError && (
-        <ErrorAlert onRetry={() => request.mutate()}>Could not send the request.</ErrorAlert>
+      {request.isError && canRequest.allowed && lawyerChosen && (
+        <ErrorAlert onRetry={() => setConfirmOpen(true)}>Could not send the request.</ErrorAlert>
       )}
 
       {doc.current && doc.latestCompleted && (

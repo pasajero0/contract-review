@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import type { CanRequest } from '@lex-poc/contract/documents';
 import {
   AlertDialog,
@@ -21,26 +20,26 @@ type Props = {
   label: 'Request review' | 'Retry';
   pending: boolean;
   timeZone: string;
+  confirmOpen: boolean;
+  onConfirmOpenChange: (open: boolean) => void;
   onConfirm: () => void;
 };
 
 /** The request button, its confirmation, and the reason when a review cannot be requested. */
-export function RequestControls({ canRequest, lawyerChosen, label, pending, timeZone, onConfirm }: Props) {
-  const [open, setOpen] = useState(false);
-
+export function RequestControls({ canRequest, lawyerChosen, label, pending, timeZone, confirmOpen, onConfirmOpenChange, onConfirm }: Props) {
   if (!canRequest.allowed && canRequest.reason === 'document_superseded') {
     return <p>{reasonText(canRequest, timeZone)}</p>;
   }
 
   return (
     <div className="space-y-2">
-      <Button disabled={!lawyerChosen || !canRequest.allowed || pending} onClick={() => setOpen(true)}>
+      <Button disabled={!lawyerChosen || !canRequest.allowed || pending} onClick={() => onConfirmOpenChange(true)}>
         {label}
       </Button>
       {!lawyerChosen && <p>Choose who you are first</p>}
       {!canRequest.allowed && <p>{reasonText(canRequest, timeZone)}</p>}
 
-      <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialog open={confirmOpen} onOpenChange={onConfirmOpenChange}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Request a review?</AlertDialogTitle>
