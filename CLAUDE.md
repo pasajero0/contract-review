@@ -26,7 +26,7 @@ Each stage is one commit. The agent stops and shows the result after stages 4, 7
 | 8 | Final check: one `code-reviewer`, fixes, every scenario in a browser, plan exhaustion and a late event on a real server, and the "To check in manual testing" list of each spec | All checks pass; each listed decision confirmed or changed by the human |
 | 9 | Hand-in: README as the brief requires, cleaned session log | The human read everything and pushes |
 
-If time runs short, cut screen tests first. Never cut the brief's rules, the three disputed decisions, the README or the log. The log keeps the agent's mistakes; only personal and confidential data is removed.
+If time runs short, cut screen tests first. Never cut the brief's rules, the three disputed decisions, the README or the log. The log keeps the agent's mistakes; only personal and confidential data and the POC's time records are removed.
 
 ## How we work
 
