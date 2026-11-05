@@ -12,6 +12,11 @@ export function formatTime(epochMs: number, timeZone: string): string {
   );
 }
 
+/** "1 finding" or "3 findings". */
+export function findingCount(n: number): string {
+  return n === 1 ? '1 finding' : `${n} findings`;
+}
+
 /** Whole seconds from `fromMs` to `toMs`, never below zero. Pass the server's time as `toMs`. */
 export function secondsBetween(fromMs: number, toMs: number): number {
   return Math.max(0, Math.floor((toMs - fromMs) / 1000));

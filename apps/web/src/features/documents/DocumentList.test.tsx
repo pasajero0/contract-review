@@ -244,6 +244,64 @@ describe('DocumentList', () => {
     expect(rowOf(list, 'Alpha NDA').textContent).not.toContain('Earlier result');
   });
 
+  it.each([
+    [0, '0 findings so far'],
+    [1, '1 finding so far'],
+    [2, '2 findings so far'],
+  ])('documents-list AC-23: an in-progress row with %i findings says "%s"', async (count, phrase) => {
+    const { list } = await renderList([
+      listItem({ documentId: 'd1', title: 'Alpha NDA', state: inProgress({ findingsCount: count }) }),
+    ]);
+
+    expect(rowOf(list, 'Alpha NDA').textContent).toContain(phrase);
+  });
+
+  it.each([
+    [1, 1, '1 finding, 1 high'],
+    [2, 1, '2 findings, 1 high'],
+  ])('documents-list AC-23: a completed row with %i findings and %i high says "%s"', async (count, high, phrase) => {
+    const { list } = await renderList([
+      listItem({
+        documentId: 'd1',
+        title: 'Alpha NDA',
+        state: completed({ findingsCount: count, highCount: high }),
+      }),
+    ]);
+
+    const text = rowOf(list, 'Alpha NDA').textContent ?? '';
+    expect(text).toContain(phrase);
+    if (count === 1) expect(text).not.toContain('1 findings');
+  });
+
+  it.each([
+    [1, '1 finding, 0 high'],
+    [2, '2 findings, 0 high'],
+  ])('documents-list AC-23: under a failure, the earlier result with %i findings says "Earlier result: %s"', async (count, phrase) => {
+    const { list } = await renderList([
+      listItem({
+        documentId: 'd1',
+        title: 'Alpha NDA',
+        state: {
+          kind: 'failed',
+          reviewId: 'r-fail',
+          requestedBy: 'Paula Partner',
+          requestedAt: REQUESTED_AT,
+          failureReason: 'timeout',
+          findingsCount: 0,
+          latestCompleted: {
+            reviewId: 'r-old',
+            requestedBy: 'Sam Senior',
+            requestedAt: REQUESTED_AT - 86_400_000,
+            findingsCount: count,
+            highCount: 0,
+          },
+        },
+      }),
+    ]);
+
+    expect(rowOf(list, 'Alpha NDA').textContent).toContain(`Earlier result: ${phrase}`);
+  });
+
   it('documents-list AC-21: shows "completed, no issues flagged" for a completed review without findings, unlike "not reviewed"', async () => {
     const { list } = await renderList([
       listItem({

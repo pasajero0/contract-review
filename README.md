@@ -154,7 +154,6 @@ We chose 36 core cases: the lawyer's path and the brief's rules. An AI agent dro
 
 **Found in manual testing and not fixed:**
 
-- With no singular form, the screen can say "1 findings".
 - An open confirmation does not refresh: it can show a stale number of remaining reviews. The server still rejects the request, and the screen shows why.
 - A page with no review it knows of does not poll. Another lawyer's new review appears when the tab becomes visible again or the page reloads, and until then the page's plan numbers can be old.
 - The chosen lawyer is not synchronised between tabs. A tab can show one lawyer while its request is recorded under the one chosen in another tab.

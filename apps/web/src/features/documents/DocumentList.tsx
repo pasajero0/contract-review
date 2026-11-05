@@ -8,7 +8,7 @@ import { queryKeys } from '@/api/queryKeys';
 import { Alert } from '@/ui/alert';
 import { Badge } from '@/ui/badge';
 import { Button } from '@/ui/button';
-import { formatDateTime } from '@/ui/format';
+import { findingCount, formatDateTime } from '@/ui/format';
 
 const POLL_MS = 1500;
 
@@ -18,7 +18,7 @@ type Summary = { findingsCount: number; highCount: number };
 
 function SummaryText({ summary }: { summary: Summary }) {
   if (summary.findingsCount === 0) return <span>completed, no issues flagged</span>;
-  return <span>{`${summary.findingsCount} findings, ${summary.highCount} high`}</span>;
+  return <span>{`${findingCount(summary.findingsCount)}, ${summary.highCount} high`}</span>;
 }
 
 function RequestedLine({ by, at }: { by: string; at: number }) {
@@ -34,7 +34,7 @@ function StateView({ state, serverTime }: { state: DocumentListItem['state']; se
       const total = Math.round((state.deadlineAt - state.requestedAt) / 1000);
       return (
         <div>
-          <Badge>in progress</Badge> <span>{`${state.findingsCount} findings so far`}</span>{' '}
+          <Badge>in progress</Badge> <span>{`${findingCount(state.findingsCount)} so far`}</span>{' '}
           <span>{`${elapsed} s of ${total}`}</span> <RequestedLine by={state.requestedBy} at={state.requestedAt} />
         </div>
       );

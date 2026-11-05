@@ -448,6 +448,42 @@ describe('ReviewPanel', () => {
     expect(screen.queryByRole('region', { name: 'Earlier result' })).toBeNull();
   });
 
+  it.each([
+    [0, '0 findings so far'],
+    [1, '1 finding so far'],
+    [2, '2 findings so far'],
+  ])('request-review AC-40: the progress line says "%i findings so far" with the right singular or plural', async (count, phrase) => {
+    stubDocument(okReply(documentBody({ current: runningReview({ findingsCount: count }), canRequest: BUSY })));
+    renderPanel();
+
+    await screen.findByText(`In progress · requested by Tina Trainee · ${phrase} · 20 s of 60`);
+  });
+
+  it.each([
+    [0, '0 findings'],
+    [1, '1 finding'],
+    [2, '2 findings'],
+  ])('request-review AC-40: the AI error text after %i findings uses the right singular or plural', async (count, phrase) => {
+    stubDocument(
+      okReply(
+        documentBody({
+          lastFailed: failedReview({
+            failureReason: 'ai_error',
+            findingsCount: count,
+            requestedBy: 'Paula Partner',
+            requestedAt: STARTED_AT,
+          }),
+        }),
+      ),
+    );
+    renderPanel();
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain(
+      `Review did not complete: AI error after ${phrase}. There is no result. · requested by Paula Partner at 14:02`,
+    );
+  });
+
   it('request-review AC-33: a timed-out review is one warning block with an icon, who and when, and Retry inside', async () => {
     stubDocument(
       okReply(
