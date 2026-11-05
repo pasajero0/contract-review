@@ -30,6 +30,7 @@ Each ADR lists its features under "Applies to". Each spec lists its ADRs in a De
 | [0020](0020-unknown-document-fails-the-review.md) | A document unknown to the AI engine fails the review |
 | [0021](0021-previous-review-stays-readable-in-full.md) | The previous review stays readable in full |
 | [0022](0022-two-rules-live-in-the-service-sql.md) | Two review rules live in the service's SQL |
+| [0023](0023-document-page-always-polls.md) | The document page polls every 10 seconds with no review running |
 
 ## Where the old ids went
 

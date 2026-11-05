@@ -57,7 +57,7 @@ The screen shows findings in the order the API gives and does not sort them.
 
 ### Unhappy path
 
-- **AC-10:** IF a review did not complete, THEN THE SYSTEM SHALL show no finding content of that review; the last completed review stays readable in full under the label "Previous review" (partner of AC-9; ADR-0002, ADR-0021).
+- **AC-10:** IF a review did not complete, THEN THE SYSTEM SHALL show no finding content of that review; the last completed review stays readable in full, labelled "Previous review" during a run and "Earlier result" after a failure (partner of AC-9; ADR-0002, ADR-0021).
 - **AC-14:** IF the API does not answer, or its response fails validation, THEN THE SYSTEM SHALL show a short error message and a "Retry" button that repeats the failed call, with no finding content (partner of AC-9; ADR-0016).
 
 ### Edge cases
@@ -74,7 +74,7 @@ Decisions the source documents did not settle. Each is built as written, and can
 - **A clause that is not a number** sorts after numeric ones. The samples have none, so nobody has seen it.
 - **The banner on a replaced version** names the newest version in the chain, not the next one, with its upload date (AC-7, AC-13).
 - **Only the latest completed review** is returned. Older ones are stored but cannot be read, and a replaced version shows only its own latest.
-- **After a failure,** the last completed review stays readable in full, under "Previous review" (ADR-0021, AC-32 of request-review).
+- **After a failure,** the last completed review stays readable in full, muted, under "Earlier result" (ADR-0021, AC-32 of request-review).
 - **A replaced version** shows a badge "review of an outdated version" inside its block, in addition to the normal label; the banner's link reads "Open the newest version".
 - **Counts line:** "1 high · 1 medium · 1 low". The source documents give no format.
 
@@ -93,6 +93,7 @@ Tests carry AC ids: `.claude/bin/trace <feature>` lists what is not covered. Scr
 
 ## Changes
 
+- 2026-11-05 — AC-10: after a failure the older result is labelled "Earlier result".
 - 2026-11-04 — AC-10: the ban covers the review that did not complete; the last completed one stays readable — ADR 0021.
 - 2026-11-04 — No criterion changed: "How to verify" now says screen tests run under Vitest with Testing Library (ADR 0017).
 - 2026-11-04 — Added "To check in manual testing": decisions the source documents did not settle.

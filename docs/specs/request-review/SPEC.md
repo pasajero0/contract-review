@@ -31,6 +31,7 @@ A lawyer requests an AI review of a document, knowing what it costs, and follows
 | [0020](../../adr/0020-unknown-document-fails-the-review.md) | 2026-11-04 | A document unknown to the engine fails the review |
 | [0021](../../adr/0021-previous-review-stays-readable-in-full.md) | 2026-11-04 | During a run or after a failure, the last completed review stays readable in full, labelled "Previous review" |
 | [0022](../../adr/0022-two-rules-live-in-the-service-sql.md) | 2026-11-05 | Inserting a review as finished and finishing after the deadline are prevented by the service's SQL |
+| [0023](../../adr/0023-document-page-always-polls.md) | 2026-11-05 | The document page polls every 10 s with no review running |
 
 ## Terms
 
@@ -96,12 +97,12 @@ Whether a review can be requested and how many remain come from `canRequest`; th
 
 ### Happy path
 
-- **AC-22:** WHEN a lawyer clicks "Request review", THE SYSTEM SHALL ask for confirmation: "This uses 1 of your 6 remaining reviews — only if it completes." (ADR-0003).
+- **AC-22:** WHEN a lawyer clicks "Request review", THE SYSTEM SHALL ask for confirmation: "This uses 1 of the workspace's 6 remaining reviews — only if it completes." (ADR-0003).
 - **AC-23:** WHEN one slot remains, THE SYSTEM SHALL say "This is the last review available this month." (ADR-0003).
 - **AC-24:** WHEN the lawyer confirms, THE SYSTEM SHALL send the request and start following the review.
 - **AC-25:** WHILE a review runs, THE SYSTEM SHALL show every lawyer, polling every 1–2 s, "In progress · requested by X · 3 findings so far · 20 s of 60", with no finding content of the running review and elapsed time from `serverTime` (ADR-0002, ADR-0007).
 - **AC-26:** WHILE a review runs and an earlier one completed, THE SYSTEM SHALL show the earlier one in full, with its findings, as a separate block, "Previous review · date · requested by", with a banner that a new review is running (ADR-0001, ADR-0021).
-- **AC-27:** WHEN a review completes, THE SYSTEM SHALL stop polling and remove the "Previous review" block; the new review is now the latest.
+- **AC-27:** WHEN a review completes, THE SYSTEM SHALL go back to polling every 10 s and remove the "Previous review" block; the new review is now the latest (ADR-0023).
 
 ### Unhappy path
 
@@ -109,18 +110,20 @@ Whether a review can be requested and how many remain come from `canRequest`; th
 - **AC-29:** WHEN `canRequest` says the plan is used up, THE SYSTEM SHALL disable the button and show "10 of 10 used. Resets on 1 December." (ADR-0003).
 - **AC-30:** IF the server rejects a request anyway, THEN THE SYSTEM SHALL show the same reason as AC-28, AC-29 or AC-31, and create nothing on screen (partner of AC-24).
 - **AC-31:** WHEN the document is superseded, THE SYSTEM SHALL show the same page with no "Request review" button (ADR-0004, ADR-0015).
-- **AC-32:** WHEN a review fails with `ai_error`, THE SYSTEM SHALL show "Review did not complete: AI error after 3 findings. There is no result.", a "Retry" button, and any previous completed review with its label (partner of AC-27).
-- **AC-33:** WHEN a review fails with `timeout`, THE SYSTEM SHALL show "Review did not complete within 60 seconds. There is no result." and a "Retry" button (partner of AC-27).
-- **AC-35:** IF the API does not answer, or its response fails validation, THEN THE SYSTEM SHALL show a short error message and a "Retry" button. For a failed read, "Retry" repeats the call. For a failed request, "Retry" shows the cost confirmation again: a retry is safe only while the first review is still running; after that it is a new request and needs confirmation. It SHALL NOT show a running review as failed because of this (partner of AC-24, AC-25; ADR-0016).
+- **AC-32:** WHEN a review fails with `ai_error`, THE SYSTEM SHALL show a clear warning block with an icon: "Review did not complete: AI error after 3 findings. There is no result. · requested by X at 14:02", with the "Retry" button inside it. Any older completed review below it is muted and labelled "Earlier result · date · requested by" (partner of AC-27).
+- **AC-33:** WHEN a review fails with `timeout`, THE SYSTEM SHALL show the same block with "Review did not complete within 60 seconds. There is no result. · requested by X at 14:02" and the "Retry" button inside it (partner of AC-27).
+- **AC-35:** IF the API does not answer, or its response fails validation, THEN THE SYSTEM SHALL show a short error message and a "Retry" button. For a failed read, "Retry" repeats the call. For a failed request, "Retry" shows the cost confirmation again: a retry is safe only while the first review is still running; after that it is a new request and needs confirmation. A request error shows only "Retry", never "Request review" next to it. It SHALL NOT show a running review as failed because of this (partner of AC-24, AC-25; ADR-0016).
 
 ### Edge cases
 
 - **AC-34:** WHEN a lawyer clicks "Retry", THE SYSTEM SHALL ask for confirmation again, as for a new request.
+- **AC-39:** WHILE no review is running, THE SYSTEM SHALL poll the document page every 10 s, so another lawyer's run shows up (partner of AC-25; ADR-0023).
+- **AC-40:** THE SYSTEM SHALL use the singular for a count of one in every count text: "1 finding", "2 findings".
 
 ## Non-functional requirements
 
 - A review fails at 60 s. The sweeper runs every 5 s, so a timeout is persisted within 5 s of the deadline.
-- The screen polls every 1–2 s, only while a review runs.
+- The document page polls every 1–2 s while a review runs and every 10 s otherwise.
 - Tests that depend on time use `ManualClock`, with no real waiting.
 
 ## To check in manual testing
@@ -137,7 +140,6 @@ Decisions the source documents did not settle. Each is built as written, and can
 - **With no lawyer chosen,** the button is disabled, with "Choose who you are first".
 - **"Retry" on a failed review** is the request button relabelled, so it also respects `canRequest` and the chosen lawyer.
 - **A rejected request** shows its reason only until the page is read again, which happens at once; then the page's own answer wins, so the reason may change.
-- **Another lawyer's new review** appears on an open page only after focus returns or the page reloads, because a page polls only while it knows of a running review (ADR-0007). AC-25 says every lawyer sees a run, so check this one.
 - **Times** ("started at", the reset date) use the workspace's time zone, read from `GET /quota`. If the plan cannot be read, the whole panel shows the load error.
 - **Texts the source documents do not give:** "Could not load the document.", "Could not refresh. Showing the last data.", "Could not send the request.", "Request a review?", "A new review is running. The result below is from an earlier review.", "Read-only — a newer version of this document exists."
 - **Simultaneous requests** (AC-15, AC-16) run in sequence in the tests, because `node:sqlite` is synchronous on one connection (ADR-0005).
@@ -158,6 +160,7 @@ Tests carry AC ids: `.claude/bin/trace <feature>` lists what is not covered. Res
 
 ## Changes
 
+- 2026-11-05 — AC-22: the confirmation says "the workspace's". AC-27, AC-39: the page goes on polling every 10 s — ADR 0023. AC-32, AC-33: the failure is a warning block with who and when, with "Retry" inside, and an older result is muted, labelled "Earlier result". AC-35: a request error shows only "Retry". AC-40: singular counts.
 - 2026-11-05 — No criterion changed: the Decisions table adds ADR 0022, which says what the database does not enforce.
 - 2026-11-05 — AC-35: "Retry" after a failed request asks for confirmation again, because repeating it is safe only while the first review is running. Added AC-36 (a sweep error does not stop the API), AC-37 (a server error is logged and keeps the contract's shape) and AC-38 (a rejected malformed request keeps it too).
 - 2026-11-04 — AC-25: the ban covers the running review's own findings. AC-26: the earlier review shows in full — ADR 0021.

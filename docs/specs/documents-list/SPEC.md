@@ -68,12 +68,14 @@ Exact shapes: `packages/contract`: `lawyers`, `quota`, `documents`. Routes: `get
 
 ### Unhappy path
 
-- **AC-20:** WHEN the latest review failed, THE SYSTEM SHALL show the reason and, below it, the latest completed review if there is one (partner of AC-17).
+- **AC-20:** WHEN the latest review failed, THE SYSTEM SHALL show the reason and, below it, the latest completed review if there is one, labelled "Earlier result:" (partner of AC-17).
 - **AC-22:** IF the API does not answer, or its response fails validation, THEN THE SYSTEM SHALL show a short error message and a "Retry" button that repeats the failed call (partner of AC-14; ADR-0016).
 
 ### Edge cases
 
 - **AC-21:** WHEN a completed review has no findings, THE SYSTEM SHALL show "completed, no issues flagged", visibly different from "not reviewed".
+- **AC-23:** THE SYSTEM SHALL use the singular for a count of one: "1 finding", "1 finding so far".
+- **AC-24:** THE SYSTEM SHALL show dates in the workspace's time zone, from `GET /quota`. IF the plan cannot be read, THEN it SHALL show the same error and "Retry" as AC-22.
 
 ## To check in manual testing
 
@@ -85,7 +87,6 @@ Decisions the source documents did not settle. Each is built as written, and can
 - **The label** on a replaced version is "Read-only". The human said "something like read-only, or nothing" (ADR-0015).
 - **Latest review** means the most recently requested one, whatever its outcome.
 - **A response that fails validation** looks the same as an API that does not answer (ADR-0016).
-- **Times in the list** use the browser's time zone, because the list's response has none. The plan's reset date uses the workspace's.
 - **Texts the source documents do not give:** "Review timed out", "Review failed: AI error", "N findings, M high".
 - **If one refresh fails while polling,** the list is replaced by the error and "Retry".
 - **No automatic retries:** a failed call shows the error at once.
@@ -105,6 +106,7 @@ Tests carry AC ids: `.claude/bin/trace <feature>` lists what is not covered. Scr
 
 ## Changes
 
+- 2026-11-05 — AC-20: an older result under a failure is labelled "Earlier result:". Added AC-23 (singular counts) and AC-24 (dates in the workspace's time zone).
 - 2026-11-04 — No criterion changed: the screen is built.
 - 2026-11-04 — Added "To check in manual testing": decisions the source documents did not settle.
 - 2026-11-04 — AC-8: applies only where a request records who acted, because reads carry no identity and `GET /lawyers` comes before a lawyer is chosen. AC-6: defines used, running and remaining. AC-7: states the order.
