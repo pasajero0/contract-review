@@ -5,7 +5,7 @@ import { formatDateTime } from '@/ui/format';
 type Props = {
   review: CompletedReview;
   /** "Previous" while a newer review runs or failed, so an old result is never read as the latest. */
-  label: 'Review result' | 'Previous review';
+  label: 'Review result' | 'Previous review' | 'Earlier result';
   timeZone: string;
   /** True when a newer version of the document exists. */
   outdated: boolean;
@@ -31,7 +31,7 @@ function FindingItem({ finding }: { finding: Finding }) {
 export function ReviewResult({ review, label, timeZone, outdated }: Props) {
   const { high, medium, low } = review.counts;
   return (
-    <section role="region" aria-label={label} className="space-y-2 rounded-lg border p-3">
+    <section role="region" aria-label={label} className={`space-y-2 rounded-lg border p-3${label === 'Earlier result' ? ' opacity-70' : ''}`}>
       <p>{`${label} · ${formatDateTime(review.requestedAt, timeZone)} · requested by ${review.requestedBy}`}</p>
       {outdated && <Badge variant="outline">review of an outdated version</Badge>}
       <p className="text-sm">{`${high} high · ${medium} medium · ${low} low`}</p>

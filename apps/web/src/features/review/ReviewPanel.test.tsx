@@ -11,6 +11,7 @@ import {
   documentBody,
   documentsBody,
   failedReview,
+  finding,
   networkError,
   okReply,
   quotaBody,
@@ -372,29 +373,103 @@ describe('ReviewPanel', () => {
     expect(screen.queryByRole('button', { name: /request review/i })).toBeNull();
   });
 
-  it('request-review AC-32: a failed review with an AI error says so, offers Retry, and keeps the earlier completed review under its label', async () => {
+  it('request-review AC-32: a failed review with an AI error is one warning block with an icon, who and when, and Retry inside', async () => {
     stubDocument(
       okReply(
         documentBody({
-          lastFailed: failedReview({ failureReason: 'ai_error', findingsCount: 3 }),
-          latestCompleted: completedReview({ requestedBy: 'Sam Senior' }),
+          lastFailed: failedReview({
+            failureReason: 'ai_error',
+            findingsCount: 3,
+            requestedBy: 'Paula Partner',
+            requestedAt: STARTED_AT,
+          }),
         }),
       ),
     );
     renderPanel();
 
-    await screen.findByText('Review did not complete: AI error after 3 findings. There is no result.');
-    expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy();
-    const block = screen.getByRole('region', { name: /previous review/i });
-    expect(block.textContent).toContain('Sam Senior');
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain(
+      'Review did not complete: AI error after 3 findings. There is no result. · requested by Paula Partner at 14:02',
+    );
+    expect(alert.querySelector('svg')).not.toBeNull();
+    expect(within(alert).getByRole('button', { name: 'Retry' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /request review/i })).toBeNull();
   });
 
-  it('request-review AC-33: a timed-out review says it did not complete within 60 seconds and offers Retry', async () => {
-    stubDocument(okReply(documentBody({ lastFailed: failedReview({ failureReason: 'timeout', findingsCount: 0 }) })));
+  it('request-review AC-32: an older completed review under a failure is muted and labelled "Earlier result", with its findings readable', async () => {
+    stubDocument(
+      okReply(
+        documentBody({
+          lastFailed: failedReview({ failureReason: 'ai_error', findingsCount: 3 }),
+          latestCompleted: completedReview({
+            requestedBy: 'Sam Senior',
+            findings: [finding({ title: 'Unlimited liability clause' })],
+          }),
+        }),
+      ),
+    );
     renderPanel();
 
-    await screen.findByText('Review did not complete within 60 seconds. There is no result.');
-    expect(screen.getByRole('button', { name: 'Retry' })).toBeTruthy();
+    const block = await screen.findByRole('region', { name: 'Earlier result' });
+    // 12:00 UTC on 28 October is 13:00 in Europe/Rome.
+    expect(block.textContent).toContain('Earlier result · 28 Oct 2026, 13:00 · requested by Sam Senior');
+    expect(within(block).getByText('Unlimited liability clause', { exact: false })).toBeTruthy();
+    expect(block.className).toContain('opacity-70');
+    expect(screen.queryByRole('region', { name: /previous review/i })).toBeNull();
+  });
+
+  it('request-review AC-32: while a review runs, the earlier completed review stays "Previous review" and is not muted', async () => {
+    vi.useFakeTimers(FAKE);
+    stubDocument(
+      okReply(
+        documentBody({
+          current: runningReview(),
+          lastFailed: failedReview(),
+          latestCompleted: completedReview({ requestedBy: 'Sam Senior' }),
+          canRequest: BUSY,
+        }),
+      ),
+    );
+    renderPanel();
+    await advance(0);
+
+    const block = screen.getByRole('region', { name: 'Previous review' });
+    expect(block.className).not.toContain('opacity-70');
+    expect(screen.queryByRole('region', { name: 'Earlier result' })).toBeNull();
+  });
+
+  it('request-review AC-32: with no failure, a completed latest review keeps "Review result" and is not muted', async () => {
+    stubDocument(okReply(documentBody({ latestCompleted: completedReview() })));
+    renderPanel();
+
+    const block = await screen.findByRole('region', { name: 'Review result' });
+    expect(block.className).not.toContain('opacity-70');
+    expect(screen.queryByRole('region', { name: 'Earlier result' })).toBeNull();
+  });
+
+  it('request-review AC-33: a timed-out review is one warning block with an icon, who and when, and Retry inside', async () => {
+    stubDocument(
+      okReply(
+        documentBody({
+          lastFailed: failedReview({
+            failureReason: 'timeout',
+            findingsCount: 0,
+            requestedBy: 'Paula Partner',
+            requestedAt: STARTED_AT,
+          }),
+        }),
+      ),
+    );
+    renderPanel();
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain(
+      'Review did not complete within 60 seconds. There is no result. · requested by Paula Partner at 14:02',
+    );
+    expect(alert.querySelector('svg')).not.toBeNull();
+    expect(within(alert).getByRole('button', { name: 'Retry' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /request review/i })).toBeNull();
   });
 
   it('request-review AC-34: Retry on a failed review asks for confirmation; nothing is sent until confirmed', async () => {

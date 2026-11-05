@@ -54,7 +54,7 @@ function StateView({ state, serverTime }: { state: DocumentListItem['state']; se
           </div>
           {state.latestCompleted && (
             <div>
-              <SummaryText summary={state.latestCompleted} />{' '}
+              <span>Earlier result:</span> <SummaryText summary={state.latestCompleted} />{' '}
               <RequestedLine by={state.latestCompleted.requestedBy} at={state.latestCompleted.requestedAt} />
             </div>
           )}

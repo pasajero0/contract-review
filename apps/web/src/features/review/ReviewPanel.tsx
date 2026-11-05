@@ -10,6 +10,7 @@ import { apiGet, apiPost } from '@/api/client';
 import { getCurrentLawyerId, subscribeToLawyerId } from '@/api/lawyer';
 import { queryKeys } from '@/api/queryKeys';
 import { Alert } from '@/ui/alert';
+import { TriangleAlert } from 'lucide-react';
 import { Button } from '@/ui/button';
 import { formatShortDayMonth } from '@/ui/format';
 import { RequestControls } from './RequestControls';
@@ -110,7 +111,23 @@ export function ReviewPanel({ documentId }: { documentId: string }) {
   const rejected = rejection && rejection.atServerTime === doc.serverTime && doc.canRequest.allowed;
   const canRequest = rejected ? rejection.reason : doc.canRequest;
   const failed = doc.current === null ? doc.lastFailed : null;
-  const resultLabel = doc.current || failed ? 'Previous review' : 'Review result';
+  const resultLabel = doc.current ? 'Previous review' : failed ? 'Earlier result' : 'Review result';
+
+  const controls = (
+    <RequestControls
+      canRequest={canRequest}
+      lawyerChosen={lawyerChosen}
+      label={failed ? 'Retry' : 'Request review'}
+      pending={request.isPending}
+      timeZone={quota.timeZone}
+      confirmOpen={confirmOpen}
+      onConfirmOpenChange={setConfirmOpen}
+      onConfirm={() => {
+        setRejection(null);
+        request.mutate();
+      }}
+    />
+  );
 
   return (
     <div className="space-y-4">
@@ -118,21 +135,17 @@ export function ReviewPanel({ documentId }: { documentId: string }) {
       {loadFailed && <ErrorAlert onRetry={retryLoad}>Could not refresh. Showing the last data.</ErrorAlert>}
 
       {doc.current && <p>{progressLine(doc.current, doc.serverTime)}</p>}
-      {failed && <p>{failureText(failed)}</p>}
-
-      <RequestControls
-        canRequest={canRequest}
-        lawyerChosen={lawyerChosen}
-        label={failed ? 'Retry' : 'Request review'}
-        pending={request.isPending}
-        timeZone={quota.timeZone}
-        confirmOpen={confirmOpen}
-        onConfirmOpenChange={setConfirmOpen}
-        onConfirm={() => {
-          setRejection(null);
-          request.mutate();
-        }}
-      />
+      {failed ? (
+        <Alert variant="destructive">
+          <TriangleAlert />
+          <div className="space-y-2">
+            <p>{failureText(failed, quota.timeZone)}</p>
+            {controls}
+          </div>
+        </Alert>
+      ) : (
+        controls
+      )}
       {request.isError && canRequest.allowed && lawyerChosen && (
         <ErrorAlert onRetry={() => setConfirmOpen(true)}>Could not send the request.</ErrorAlert>
       )}

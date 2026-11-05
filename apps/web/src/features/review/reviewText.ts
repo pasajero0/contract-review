@@ -13,9 +13,12 @@ export function progressLine(current: RunningReview, serverTime: number): string
   return `In progress · requested by ${current.requestedBy} · ${current.findingsCount} findings so far · ${elapsed} s of ${total}`;
 }
 
-export function failureText(failed: FailedReview): string {
-  if (failed.failureReason === 'timeout') return 'Review did not complete within 60 seconds. There is no result.';
-  return `Review did not complete: AI error after ${failed.findingsCount} findings. There is no result.`;
+export function failureText(failed: FailedReview, timeZone: string): string {
+  const what =
+    failed.failureReason === 'timeout'
+      ? 'Review did not complete within 60 seconds. There is no result.'
+      : `Review did not complete: AI error after ${failed.findingsCount} findings. There is no result.`;
+  return `${what} · requested by ${failed.requestedBy} at ${formatTime(failed.requestedAt, timeZone)}`;
 }
 
 /** Why a review cannot be requested. Dates and times are in the quota's time zone. */

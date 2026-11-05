@@ -216,6 +216,8 @@ describe('DocumentList', () => {
     const summary = row.getByText(/6 findings/);
     expect(rowOf(list, 'Alpha NDA').textContent).toMatch(/3 high/);
     expect(reason.compareDocumentPosition(summary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    // The older result is labelled, and the label sits directly before its summary.
+    expect(rowOf(list, 'Alpha NDA').textContent).toMatch(/Earlier result:\s*6 findings/);
   });
 
   it('documents-list AC-20: shows no completed-review summary when there is none', async () => {
@@ -239,6 +241,7 @@ describe('DocumentList', () => {
     expect(row.getByText(/timed out|timeout/i)).toBeTruthy();
     expect(row.queryByText(/high/i)).toBeNull();
     expect(row.queryByText(/completed/i)).toBeNull();
+    expect(rowOf(list, 'Alpha NDA').textContent).not.toContain('Earlier result');
   });
 
   it('documents-list AC-21: shows "completed, no issues flagged" for a completed review without findings, unlike "not reviewed"', async () => {

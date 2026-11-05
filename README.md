@@ -154,7 +154,6 @@ We chose 36 core cases: the lawyer's path and the brief's rules. An AI agent dro
 
 **Found in manual testing and not fixed:**
 
-- After a failure, the failure text is plain, while the previous result below it is a large card. The text says "There is no result", but the eye goes to the old card. The list also marks an older result under a failure only by its date.
 - With no singular form, the screen can say "1 findings".
 - An open confirmation does not refresh: it can show a stale number of remaining reviews. The server still rejects the request, and the screen shows why.
 - A page with no review it knows of does not poll. Another lawyer's new review appears when the tab becomes visible again or the page reloads, and until then the page's plan numbers can be old.

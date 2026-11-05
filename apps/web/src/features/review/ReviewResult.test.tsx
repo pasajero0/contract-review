@@ -125,17 +125,17 @@ describe('Review result', () => {
   });
 
   describe.each([
-    ['a review is running', documentBody({ current: runningReview(), latestCompleted: reviewWith() })],
-    ['the last review failed', documentBody({ lastFailed: failedReview(), latestCompleted: reviewWith() })],
-  ])('when %s and an earlier review completed', (_name, body) => {
-    it('read-result AC-10: findings show only under "Previous review", never as "Review result"', async () => {
+    ['a review is running', documentBody({ current: runningReview(), latestCompleted: reviewWith() }), 'Previous review'],
+    ['the last review failed', documentBody({ lastFailed: failedReview(), latestCompleted: reviewWith() }), 'Earlier result'],
+  ])('when %s and an earlier review completed', (_name, body, label) => {
+    it('read-result AC-10: findings show only under "Previous review" during a run and "Earlier result" after a failure, never as "Review result"', async () => {
       stubDocument(okReply(body));
       renderPanel();
 
-      const previous = await screen.findByRole('region', { name: 'Previous review' });
+      const previous = await screen.findByRole('region', { name: label });
       expect(within(previous).getByRole('list')).toBeTruthy();
       expect(within(previous).getByText(HIGH.title, { exact: false })).toBeTruthy();
-      expect(previous.textContent).toContain('Previous review · ');
+      expect(previous.textContent).toContain(`${label} · `);
       expect(screen.queryByRole('region', { name: 'Review result' })).toBeNull();
       expect(screen.queryByText(/^Review result/)).toBeNull();
       expect(screen.getAllByRole('list')).toHaveLength(1);
