@@ -2,7 +2,7 @@
 
 - **Status:** Accepted (made precise by 0021)
 - **Date:** 2026-11-04
-- **Applies to:** [request-review](../specs/request-review/SPEC.md)
+- **Applies to:** [request-review](../../specs/request-review/SPEC.md)
 
 ## Context
 

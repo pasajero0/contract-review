@@ -42,8 +42,8 @@ Each ADR lists its features under "Applies to". Each spec lists its ADRs in a De
 |---|---|
 | D1, D2, D3, D4 | 0001, 0002, 0003, 0004 |
 | A1 | 0005 |
-| A2, A3, A12, A16 | [backend](../architecture/backend.md) |
-| A17 | [frontend](../architecture/frontend.md) |
+| A2, A3, A12, A16 | [backend](../../architecture/backend.md) |
+| A17 | [frontend](../../architecture/frontend.md) |
 | A5 | Replaced by 0014 |
 | A8, A9 | 0006 |
 | A10 | 0007 |
@@ -52,20 +52,20 @@ Each ADR lists its features under "Applies to". Each spec lists its ADRs in a De
 | A15 | 0010 |
 | A18, M6–M11 | 0013 |
 | R1 | 0011 |
-| R2, R3, R4 | [request-review](../specs/request-review/SPEC.md) |
+| R2, R3, R4 | [request-review](../../specs/request-review/SPEC.md) |
 | M18 | 0012 |
 | M1–M5, M17 | `CLAUDE.md` |
-| M12, M14, M20 | [backend](../architecture/backend.md) |
-| M13 | [frontend](../architecture/frontend.md) |
-| §B | [backend](../architecture/backend.md) |
-| §L | [overview](../architecture/overview.md), [backend](../architecture/backend.md), [frontend](../architecture/frontend.md) |
+| M12, M14, M20 | [backend](../../architecture/backend.md) |
+| M13 | [frontend](../../architecture/frontend.md) |
+| §B | [backend](../../architecture/backend.md) |
+| §L | [overview](../../architecture/overview.md), [backend](../../architecture/backend.md), [frontend](../../architecture/frontend.md) |
 | §C | `apps/api/src/db/schema.sql`; reasons in 0008 |
 | §D | Specs; exact shapes in `packages/contract` |
 | §G | "Alternatives considered" in each ADR; short list in `README.md` |
 | §H, §I | Specs |
 | §K | `README.md`, 0013 |
-| UC1, UC2 | [documents-list](../specs/documents-list/SPEC.md) |
-| UC3, UC4, UC6, UC7, UC8, UC10, UC11 | [request-review](../specs/request-review/SPEC.md) |
-| UC5 | [read-result](../specs/read-result/SPEC.md) |
-| UC9 | [documents-list](../specs/documents-list/SPEC.md), [read-result](../specs/read-result/SPEC.md) |
-| Optional review history | Out of scope in [read-result](../specs/read-result/SPEC.md) |
+| UC1, UC2 | [documents-list](../../specs/documents-list/SPEC.md) |
+| UC3, UC4, UC6, UC7, UC8, UC10, UC11 | [request-review](../../specs/request-review/SPEC.md) |
+| UC5 | [read-result](../../specs/read-result/SPEC.md) |
+| UC9 | [documents-list](../../specs/documents-list/SPEC.md), [read-result](../../specs/read-result/SPEC.md) |
+| Optional review history | Out of scope in [read-result](../../specs/read-result/SPEC.md) |

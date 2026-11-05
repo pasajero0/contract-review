@@ -158,6 +158,7 @@ We chose 36 core cases, the lawyer's path and the brief's rules, listed in each 
 - If the plan cannot be refreshed, the document page keeps its last data with a notice, and the header shows the error.
 - While the page loads, the lawyer picker briefly shows 'Who are you?' before the saved choice; there are no loading skeletons.
 - The reason a button is disabled is not linked to it for screen readers (no aria-describedby).
+- The documents list and the plan in the header refresh only while a review is running, on focus, or on reload; a run started elsewhere shows up there late. The document page polls every 10 s.
 
 **By design of this solution:**
 
@@ -230,4 +231,4 @@ Before this I built a POC to set up and test my agent harness; its decisions and
 
 The POC took about 3 h 50 min, mostly setting up the harness, checking the risky parts and writing the first decisions. It is not in the total above.
 
-Over the brief's 4 hours: building the solution, the code review and fixing its findings took about 4 h 15 min; on top of that I verified 34 of 36 core cases by hand, about 6 h 15 min in all.
+Over the brief's 4 hours: building the solution, the code review and fixing its findings took about 4 h 15 min; on top of that I verified 34 of 36 core cases by hand, about 6 h 15 min in all, or about 10 h with the POC.

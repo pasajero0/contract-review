@@ -2,7 +2,7 @@
 
 - **Status:** Accepted (replaces 0007 in part, for the document page)
 - **Date:** 2026-11-05
-- **Applies to:** [request-review](../specs/request-review/SPEC.md)
+- **Applies to:** [request-review](../../specs/request-review/SPEC.md)
 
 ## Context
 

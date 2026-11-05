@@ -2,7 +2,7 @@
 
 - **Status:** Accepted
 - **Date:** 2026-11-04
-- **Applies to:** [documents-list](../specs/documents-list/SPEC.md)
+- **Applies to:** [documents-list](../../specs/documents-list/SPEC.md)
 
 ## Context
 

@@ -11,6 +11,8 @@ The POC is finished (tag `poc-end`, archive in `docs/poc/`). We build the final 
 
 ## Stages
 
+All stages are done; the table is kept as the build plan.
+
 Each stage is one commit. The agent stops and shows the result after stages 4, 7 and 9.
 
 | # | Stage | Done when |

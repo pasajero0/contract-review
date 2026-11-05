@@ -2,7 +2,7 @@
 
 - **Status:** Accepted (settles the open point in 0004)
 - **Date:** 2026-11-04
-- **Applies to:** [documents-list](../specs/documents-list/SPEC.md), [request-review](../specs/request-review/SPEC.md), [read-result](../specs/read-result/SPEC.md)
+- **Applies to:** [documents-list](../../specs/documents-list/SPEC.md), [request-review](../../specs/request-review/SPEC.md), [read-result](../../specs/read-result/SPEC.md)
 
 ## Context
 
