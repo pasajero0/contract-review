@@ -48,7 +48,7 @@ beforeEach(() => {
     { db, clock, random: new FixedRandom(), config: DEFAULT_CONFIG, logger: { warn: () => {} } },
     { onStarted: () => {} },
   );
-  app = buildApp();
+  app = buildApp({ warn: () => {} });
   registerReviewRoutes(app, service);
 });
 

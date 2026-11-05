@@ -34,7 +34,7 @@ const service: ReviewService = createReviewService(
 );
 startSweeper({ clock, config, logger }, service);
 
-const app = buildApp();
+const app = buildApp(logger);
 registerReviewRoutes(app, service);
 await app.listen({ port: PORT, host: HOST });
 console.log(`API listening on http://${HOST}:${PORT}`);

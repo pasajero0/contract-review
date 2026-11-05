@@ -1,4 +1,5 @@
 import { DocumentResponse } from '@lex-poc/contract/documents';
+import { ErrorBody } from '@lex-poc/contract/errors';
 import { RequestReviewResponse, ReviewResponse } from '@lex-poc/contract/reviews';
 import type { FastifyInstance } from 'fastify';
 import { beforeEach, describe, expect, it } from 'vitest';
@@ -38,7 +39,7 @@ beforeEach(() => {
     { db, clock, random: new FixedRandom(), config: DEFAULT_CONFIG, logger: { warn: () => {} } },
     { onStarted: () => {} },
   );
-  app = buildApp();
+  app = buildApp({ warn: () => {} });
   registerReviewRoutes(app, service);
 });
 
@@ -122,7 +123,7 @@ describe('POST /documents/:id/reviews without waiting for the AI', () => {
       run: () => ({ [Symbol.asyncIterator]: () => ({ next: () => new Promise<never>(() => {}) }) }),
     };
     const logger = { warn: () => {} };
-    const stuckApp = buildApp();
+    const stuckApp = buildApp({ warn: () => {} });
     const stuckService: ReviewService = createReviewService(
       { db, clock, random: new FixedRandom(), config: DEFAULT_CONFIG, logger },
       { onStarted: (review) => startRunner({ engine: stuckEngine, logger }, stuckService, review) },
@@ -138,6 +139,66 @@ describe('POST /documents/:id/reviews without waiting for the AI', () => {
     expect(response.statusCode).toBe(201);
     const { reviewId } = RequestReviewResponse.parse(response.json());
     expect(stuckService.getReview(reviewId)).toMatchObject({ status: 'running', findingsCount: 0 });
+  });
+});
+
+describe('server errors and rejected requests', () => {
+  const loggedMessages: string[] = [];
+  let failingApp: FastifyInstance;
+
+  function appWith(override: Partial<ReviewService>): FastifyInstance {
+    const built = buildApp({ warn: (message: string) => loggedMessages.push(message) });
+    registerReviewRoutes(built, { ...service, ...override });
+    return built;
+  }
+
+  beforeEach(() => {
+    loggedMessages.length = 0;
+  });
+
+  it('request-review AC-37: an unexpected error is logged and answers 500 with internal_error and no internal details', async () => {
+    failingApp = appWith({
+      getQuota: () => {
+        throw new Error('secret sqlite detail');
+      },
+    });
+
+    const response = await failingApp.inject({ method: 'GET', url: '/quota' });
+
+    expect(response.statusCode).toBe(500);
+    expect(response.json()).toEqual({ code: 'internal_error' });
+    expect(ErrorBody.parse(response.json())).toEqual({ code: 'internal_error' });
+    expect(response.body).not.toContain('secret sqlite detail');
+    expect(loggedMessages.join(' ')).toContain('secret sqlite detail');
+  });
+
+  it("request-review AC-37: a response that fails the contract's schema is logged and answers 500 with internal_error", async () => {
+    failingApp = appWith({
+      // Not a quota shape: the contract's schema rejects it before it is sent.
+      getQuota: () => ({ limit: 'many' }) as unknown as ReturnType<ReviewService['getQuota']>,
+    });
+
+    const response = await failingApp.inject({ method: 'GET', url: '/quota' });
+
+    expect(response.statusCode).toBe(500);
+    expect(response.json()).toEqual({ code: 'internal_error' });
+    expect(loggedMessages).toHaveLength(1);
+  });
+
+  it('request-review AC-38: malformed JSON answers 400 with bad_request and is not logged as a server error', async () => {
+    const quietApp = appWith({});
+
+    const response = await quietApp.inject({
+      method: 'POST',
+      url: '/documents/doc-1/reviews',
+      headers: { ...HEADERS, 'content-type': 'application/json' },
+      payload: '{',
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toEqual({ code: 'bad_request' });
+    expect(ErrorBody.parse(response.json())).toEqual({ code: 'bad_request' });
+    expect(loggedMessages).toEqual([]);
   });
 });
 

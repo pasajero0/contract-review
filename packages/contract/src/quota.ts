@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ErrorBody } from './errors.ts';
 
 // All times are epoch milliseconds, UTC.
 
@@ -16,5 +17,5 @@ export type QuotaResponse = z.infer<typeof QuotaResponse>;
 export const getQuota = {
   method: 'GET',
   path: '/quota',
-  responses: { 200: QuotaResponse },
+  responses: { 200: QuotaResponse, 500: ErrorBody },
 } as const;

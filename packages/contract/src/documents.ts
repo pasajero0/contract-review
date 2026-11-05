@@ -84,7 +84,7 @@ export type DocumentResponse = z.infer<typeof DocumentResponse>;
 export const getDocument = {
   method: 'GET',
   path: '/documents/:id',
-  responses: { 200: DocumentResponse, 404: ErrorBody },
+  responses: { 200: DocumentResponse, 404: ErrorBody, 500: ErrorBody },
 } as const;
 
 const ReviewSummary = z.object({
@@ -137,5 +137,5 @@ export type DocumentsResponse = z.infer<typeof DocumentsResponse>;
 export const getDocuments = {
   method: 'GET',
   path: '/documents',
-  responses: { 200: DocumentsResponse },
+  responses: { 200: DocumentsResponse, 500: ErrorBody },
 } as const;

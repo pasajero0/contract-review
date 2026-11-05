@@ -20,11 +20,11 @@ export type ReviewResponse = z.infer<typeof ReviewResponse>;
 export const requestReview = {
   method: 'POST',
   path: '/documents/:id/reviews',
-  responses: { 201: RequestReviewResponse, 400: ErrorBody, 404: ErrorBody, 409: ErrorBody },
+  responses: { 201: RequestReviewResponse, 400: ErrorBody, 404: ErrorBody, 409: ErrorBody, 500: ErrorBody },
 } as const;
 
 export const getReview = {
   method: 'GET',
   path: '/reviews/:id',
-  responses: { 200: ReviewResponse, 404: ErrorBody },
+  responses: { 200: ReviewResponse, 404: ErrorBody, 500: ErrorBody },
 } as const;
